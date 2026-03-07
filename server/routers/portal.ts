@@ -149,7 +149,7 @@ export const portalRouter = createTRPCRouter({
           visitDate: true,
           diagnosis: true,
           treatment: true,
-          notes: true,
+          internalNotes: true,
           vet: { select: { name: true } },
         },
         orderBy: { visitDate: "desc" },

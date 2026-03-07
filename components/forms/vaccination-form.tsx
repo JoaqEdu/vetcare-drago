@@ -4,11 +4,12 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarIcon, Loader2 } from "lucide-react"
+import { CalendarIcon, Loader2, CheckCircle, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Popover,
@@ -27,6 +28,7 @@ interface Patient {
 
 interface VaccinationFormProps {
   patient: Patient
+  appointmentId?: string
 }
 
 const COMMON_VACCINES: Record<string, string[]> = {
@@ -35,7 +37,7 @@ const COMMON_VACCINES: Record<string, string[]> = {
   default: ["Rabia"],
 }
 
-export function VaccinationForm({ patient }: VaccinationFormProps) {
+export function VaccinationForm({ patient, appointmentId }: VaccinationFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -47,12 +49,19 @@ export function VaccinationForm({ patient }: VaccinationFormProps) {
     batchNumber: "",
     administeredAt: new Date(),
     nextDueDate: undefined as Date | undefined,
+    nextVaccineName: "",
+    isBooster: false,
     notes: "",
   })
 
   const createVaccination = trpc.vaccinations.create.useMutation({
     onSuccess: () => {
-      router.push(`/pacientes/${patient.id}`)
+      // Si viene de una cita, redirigir a la cita
+      if (appointmentId) {
+        router.push(`/citas/${appointmentId}`)
+      } else {
+        router.push(`/pacientes/${patient.id}`)
+      }
       router.refresh()
     },
     onError: (error) => {
@@ -74,24 +83,50 @@ export function VaccinationForm({ patient }: VaccinationFormProps) {
 
     createVaccination.mutate({
       patientId: patient.id,
+      appointmentId: appointmentId || undefined,
       vaccineName: formData.vaccineName.trim(),
       vaccineType: formData.vaccineType.trim() || undefined,
       manufacturer: formData.manufacturer.trim() || undefined,
       batchNumber: formData.batchNumber.trim() || undefined,
       administeredAt: formData.administeredAt,
       nextDueDate: formData.nextDueDate,
+      nextVaccineName: formData.nextVaccineName.trim() || undefined,
+      isBooster: formData.isBooster,
       notes: formData.notes.trim() || undefined,
     })
   }
 
-  const handleChange = (field: string, value: string | Date | undefined) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const handleChange = (field: string, value: string | Date | undefined | boolean) => {
+    if (field === "isBooster") {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value === "true" || value === true,
+        // Si marca como refuerzo, limpiar nextVaccineName
+        nextVaccineName: (value === "true" || value === true) ? "" : prev.nextVaccineName
+      }))
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+    }
   }
 
   const suggestedVaccines = COMMON_VACCINES[patient.species] || COMMON_VACCINES.default
 
   return (
     <form onSubmit={handleSubmit}>
+      {appointmentId && (
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 p-4">
+          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <div>
+            <p className="font-medium text-green-900 dark:text-green-100">
+              Registro de vacunación desde cita completada
+            </p>
+            <p className="text-sm text-green-700 dark:text-green-300">
+              Esta vacuna quedará registrada en la tarjeta de vacunación del paciente
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -262,6 +297,63 @@ export function VaccinationForm({ patient }: VaccinationFormProps) {
                 </Button>
               </div>
             </div>
+
+            {/* Campos condicionales si hay próxima dosis */}
+            {formData.nextDueDate && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/30 p-4 space-y-4">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm flex-1">
+                    <p className="font-medium text-blue-900 dark:text-blue-100">
+                      Próxima vacunación programada
+                    </p>
+                    <p className="text-blue-700 dark:text-blue-300 mt-1">
+                      Especifica qué vacuna se aplicará en la próxima cita
+                    </p>
+                  </div>
+                </div>
+
+                {/* Checkbox: ¿Es refuerzo? */}
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="isBooster"
+                    checked={formData.isBooster}
+                    onCheckedChange={(checked) =>
+                      handleChange("isBooster", checked ? "true" : "false")
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="isBooster"
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      Es refuerzo de la misma vacuna
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Marca esto si la próxima dosis es de la misma vacuna (ej: Rabia - 2da dosis)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Campo: Nombre de la siguiente vacuna (solo si NO es refuerzo) */}
+                {!formData.isBooster && (
+                  <div className="space-y-2">
+                    <Label htmlFor="nextVaccineName">Nombre de la Siguiente Vacuna</Label>
+                    <Input
+                      id="nextVaccineName"
+                      placeholder="Ej: Quíntuple, Séxtuple, Rabia..."
+                      value={formData.nextVaccineName}
+                      onChange={(e) => handleChange("nextVaccineName", e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Especifica qué vacuna le toca en la siguiente cita (puede ser diferente)
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notas</Label>

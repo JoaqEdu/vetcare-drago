@@ -29,6 +29,7 @@ import { trpc } from "@/lib/trpc"
 const APPOINTMENT_TYPES = [
   { value: "CHECKUP", label: "Consulta" },
   { value: "VACCINATION", label: "Vacunacion" },
+  { value: "DEWORMING", label: "Desparasitacion" },
   { value: "SURGERY", label: "Cirugia" },
   { value: "EMERGENCY", label: "Emergencia" },
   { value: "GROOMING", label: "Estetica" },
@@ -52,6 +53,8 @@ export function AppointmentForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedPatientId = searchParams.get("patientId")
+  const preselectedType = searchParams.get("type")
+  const parentRecordId = searchParams.get("parentRecordId")
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -63,9 +66,13 @@ export function AppointmentForm() {
     scheduledDate: undefined as Date | undefined,
     scheduledTime: "09:00",
     duration: "30",
-    type: "CHECKUP",
+    type: preselectedType || "CHECKUP",
     reason: "",
     notes: "",
+    // Campos para vacunación
+    vaccineName: "",
+    vaccineType: "",
+    vaccineManufacturer: "",
   })
 
   // Fetch patients for selection
@@ -107,6 +114,12 @@ export function AppointmentForm() {
       return
     }
 
+    // Validar campos de vacunación si es tipo VACCINATION
+    if (formData.type === "VACCINATION" && !formData.vaccineName.trim()) {
+      setError("El nombre de la vacuna es requerido para citas de vacunación")
+      return
+    }
+
     setIsSubmitting(true)
 
     // Combine date and time
@@ -122,6 +135,12 @@ export function AppointmentForm() {
       type: formData.type as "CHECKUP" | "VACCINATION" | "SURGERY" | "EMERGENCY" | "GROOMING" | "DENTAL" | "LABORATORY" | "XRAY" | "FOLLOWUP" | "OTHER",
       reason: formData.reason || undefined,
       notes: formData.notes || undefined,
+      // Campos de vacunación (solo si es tipo VACCINATION)
+      vaccineName: formData.type === "VACCINATION" ? formData.vaccineName.trim() || undefined : undefined,
+      vaccineType: formData.type === "VACCINATION" ? formData.vaccineType.trim() || undefined : undefined,
+      vaccineManufacturer: formData.type === "VACCINATION" ? formData.vaccineManufacturer.trim() || undefined : undefined,
+      // Vínculo con expediente médico (si es cita de seguimiento)
+      parentRecordId: parentRecordId || undefined,
     })
   }
 
@@ -234,6 +253,49 @@ export function AppointmentForm() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Campos específicos para vacunación */}
+            {formData.type === "VACCINATION" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="vaccineName">Nombre de la Vacuna *</Label>
+                  <Input
+                    id="vaccineName"
+                    placeholder="Ej: Rabia, Parvovirus, Quintuple..."
+                    value={formData.vaccineName}
+                    onChange={(e) => handleChange("vaccineName", e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Especifica qué vacuna se aplicará en esta cita
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="vaccineType">Tipo de Vacuna</Label>
+                    <Input
+                      id="vaccineType"
+                      placeholder="Ej: Inactivada, Atenuada, Recombinante..."
+                      value={formData.vaccineType}
+                      onChange={(e) => handleChange("vaccineType", e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="vaccineManufacturer">Laboratorio</Label>
+                    <Input
+                      id="vaccineManufacturer"
+                      placeholder="Ej: Zoetis, MSD, Virbac..."
+                      value={formData.vaccineManufacturer}
+                      onChange={(e) => handleChange("vaccineManufacturer", e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="reason">Motivo de la Consulta</Label>

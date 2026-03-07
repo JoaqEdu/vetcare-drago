@@ -15,11 +15,16 @@ import {
   Syringe,
   FileText,
   Clock,
+  Bug,
+  Smile,
+  FlaskConical,
+  Scan,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { PatientTimeline } from "@/components/timeline/patient-timeline"
 
 const SPECIES_LABELS: Record<string, string> = {
   DOG: "Perro",
@@ -46,19 +51,34 @@ export default async function PatientDetailPage({
   const { id } = await params
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const patient = await db.patient.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
     include: {
       owner: true,
       vaccinations: {
         orderBy: { administeredAt: "desc" },
+        take: 5,
+      },
+      dewormings: {
+        orderBy: { administeredAt: "desc" },
+        take: 5,
+      },
+      dentalRecords: {
+        orderBy: { performedAt: "desc" },
+        take: 5,
+      },
+      labResults: {
+        orderBy: { sampleDate: "desc" },
+        take: 5,
+      },
+      xrayRecords: {
+        orderBy: { performedAt: "desc" },
         take: 5,
       },
       appointments: {
@@ -268,6 +288,182 @@ export default async function PatientDetailPage({
           </CardContent>
         </Card>
 
+        {/* Desparasitaciones */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Bug className="h-5 w-5" />
+                  Desparasitaciones
+                </CardTitle>
+                <CardDescription>Historial de desparasitacion</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link href={`/pacientes/${patient.id}/desparasitaciones/nueva`}>
+                  Nueva
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {patient.dewormings.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay desparasitaciones registradas</p>
+            ) : (
+              <div className="space-y-2">
+                {patient.dewormings.map((dew) => (
+                  <div key={dew.id} className="flex items-center justify-between rounded-lg border p-2">
+                    <div>
+                      <p className="font-medium text-sm">{dew.productName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(dew.administeredAt), "d MMM yyyy", { locale: es })}
+                        {dew.productType && ` - ${dew.productType}`}
+                      </p>
+                    </div>
+                    {dew.nextDueDate && (
+                      <Badge
+                        variant={new Date(dew.nextDueDate) < new Date() ? "destructive" : "outline"}
+                        className="text-xs"
+                      >
+                        {new Date(dew.nextDueDate) < new Date() ? "Vencida" : format(new Date(dew.nextDueDate), "dd/MM/yy")}
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Procedimientos Dentales */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Smile className="h-5 w-5" />
+                  Procedimientos Dentales
+                </CardTitle>
+                <CardDescription>Historial dental</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link href={`/pacientes/${patient.id}/dental/nuevo`}>
+                  Nuevo
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {patient.dentalRecords.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay procedimientos dentales registrados</p>
+            ) : (
+              <div className="space-y-2">
+                {patient.dentalRecords.map((dental) => (
+                  <div key={dental.id} className="flex items-center justify-between rounded-lg border p-2">
+                    <div>
+                      <p className="font-medium text-sm">{dental.procedure}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(dental.performedAt), "d MMM yyyy", { locale: es })}
+                        {dental.anesthesia && " • Con anestesia"}
+                      </p>
+                    </div>
+                    {dental.nextCheckup && (
+                      <Badge
+                        variant={new Date(dental.nextCheckup) < new Date() ? "destructive" : "outline"}
+                        className="text-xs"
+                      >
+                        {new Date(dental.nextCheckup) < new Date() ? "Vencido" : format(new Date(dental.nextCheckup), "dd/MM/yy")}
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Resultados de Laboratorio */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FlaskConical className="h-5 w-5" />
+                  Laboratorio
+                </CardTitle>
+                <CardDescription>Resultados de análisis</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link href={`/pacientes/${patient.id}/laboratorio/nuevo`}>
+                  Nuevo
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {patient.labResults.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay resultados de laboratorio</p>
+            ) : (
+              <div className="space-y-2">
+                {patient.labResults.map((lab) => (
+                  <div key={lab.id} className="rounded-lg border p-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-sm">{lab.testType}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(lab.sampleDate), "dd/MM/yy")}
+                      </p>
+                    </div>
+                    {lab.testName && (
+                      <p className="text-xs text-muted-foreground">{lab.testName}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Estudios de Rayos X */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Scan className="h-5 w-5" />
+                  Rayos X
+                </CardTitle>
+                <CardDescription>Estudios radiográficos</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link href={`/pacientes/${patient.id}/rayos-x/nuevo`}>
+                  Nuevo
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {patient.xrayRecords.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay estudios de rayos X</p>
+            ) : (
+              <div className="space-y-2">
+                {patient.xrayRecords.map((xray) => (
+                  <div key={xray.id} className="rounded-lg border p-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-sm">{xray.bodyPart}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(xray.performedAt), "dd/MM/yy")}
+                      </p>
+                    </div>
+                    {xray.diagnosis && (
+                      <p className="text-xs text-muted-foreground line-clamp-1">{xray.diagnosis}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Citas */}
         <Card>
           <CardHeader>
@@ -357,6 +553,22 @@ export default async function PatientDetailPage({
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Timeline del Historial */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Línea de Tiempo
+            </CardTitle>
+            <CardDescription>
+              Historial completo del paciente ordenado cronológicamente
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PatientTimeline patientId={patient.id} />
           </CardContent>
         </Card>
       </div>

@@ -13,14 +13,13 @@ export default async function EditPatientPage({
   const { id } = await params
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const patient = await db.patient.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
   })
 

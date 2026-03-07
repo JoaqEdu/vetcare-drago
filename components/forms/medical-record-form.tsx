@@ -4,11 +4,12 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarIcon, Loader2 } from "lucide-react"
+import { CalendarIcon, Loader2, CheckCircle, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Popover,
@@ -50,11 +51,17 @@ export function MedicalRecordForm({ patient, appointmentId }: MedicalRecordFormP
     recommendations: "",
     followUpDate: undefined as Date | undefined,
     internalNotes: "",
+    requiresFollowUp: false,
   })
 
   const createRecord = trpc.medicalRecords.create.useMutation({
     onSuccess: () => {
-      router.push(`/pacientes/${patient.id}`)
+      // Si viene de una cita, redirigir a la cita
+      if (appointmentId) {
+        router.push(`/citas/${appointmentId}`)
+      } else {
+        router.push(`/pacientes/${patient.id}`)
+      }
       router.refresh()
     },
     onError: (error) => {
@@ -84,15 +91,35 @@ export function MedicalRecordForm({ patient, appointmentId }: MedicalRecordFormP
       recommendations: formData.recommendations || undefined,
       followUpDate: formData.followUpDate,
       internalNotes: formData.internalNotes || undefined,
+      requiresFollowUp: formData.requiresFollowUp,
+      treatmentStatus: formData.requiresFollowUp ? "ACTIVE" as const : undefined,
     })
   }
 
-  const handleChange = (field: string, value: string | Date | undefined) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const handleChange = (field: string, value: string | Date | undefined | boolean) => {
+    if (field === "requiresFollowUp") {
+      setFormData((prev) => ({ ...prev, [field]: value === "true" || value === true }))
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+    }
   }
 
   return (
     <form onSubmit={handleSubmit}>
+      {appointmentId && (
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 p-4">
+          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <div>
+            <p className="font-medium text-green-900 dark:text-green-100">
+              Expediente vinculado a cita completada
+            </p>
+            <p className="text-sm text-green-700 dark:text-green-300">
+              Este expediente quedará asociado automáticamente a la cita médica
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Motivo y Anamnesis */}
         <Card>
@@ -264,6 +291,44 @@ export function MedicalRecordForm({ patient, appointmentId }: MedicalRecordFormP
                 rows={3}
               />
             </div>
+
+            {/* Checkbox de seguimiento */}
+            <div className="flex items-start space-x-3 rounded-lg border p-4 bg-muted/50">
+              <Checkbox
+                id="requiresFollowUp"
+                checked={formData.requiresFollowUp}
+                onCheckedChange={(checked) =>
+                  handleChange("requiresFollowUp", checked ? "true" : "false")
+                }
+                disabled={isSubmitting}
+              />
+              <div className="flex-1 space-y-1">
+                <Label
+                  htmlFor="requiresFollowUp"
+                  className="text-sm font-medium leading-none cursor-pointer"
+                >
+                  Requiere seguimiento post-tratamiento
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Habilita la opción de programar citas de seguimiento desde el expediente médico
+                </p>
+              </div>
+            </div>
+
+            {formData.requiresFollowUp && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/30 p-4 flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 dark:text-blue-100">
+                    Seguimiento habilitado
+                  </p>
+                  <p className="text-blue-700 dark:text-blue-300 mt-1">
+                    Podrás programar citas de seguimiento desde la vista del expediente médico.
+                    El tratamiento estará activo hasta que lo marques como concluido.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Fecha de Seguimiento</Label>

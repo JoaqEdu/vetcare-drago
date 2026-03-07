@@ -7,20 +7,22 @@ import { VaccinationForm } from "@/components/forms/vaccination-form"
 
 export default async function NuevaVacunaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ appointmentId?: string }>
 }) {
   const { id } = await params
+  const { appointmentId } = await searchParams
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const patient = await db.patient.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
     select: {
       id: true,
@@ -50,7 +52,7 @@ export default async function NuevaVacunaPage({
         </div>
       </div>
 
-      <VaccinationForm patient={patient} />
+      <VaccinationForm patient={patient} appointmentId={appointmentId} />
     </div>
   )
 }

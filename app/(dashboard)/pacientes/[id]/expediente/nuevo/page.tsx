@@ -16,14 +16,13 @@ export default async function NuevoExpedientePage({
   const { appointmentId } = await searchParams
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const patient = await db.patient.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
     select: {
       id: true,

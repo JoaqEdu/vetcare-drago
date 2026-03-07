@@ -40,23 +40,18 @@ export default async function OwnerDetailPage({
   const { id } = await params
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const owner = await db.owner.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
     include: {
       patients: {
         where: { isActive: true },
         orderBy: { name: "asc" },
-      },
-      invoices: {
-        orderBy: { createdAt: "desc" },
-        take: 5,
       },
     },
   })
@@ -64,9 +59,6 @@ export default async function OwnerDetailPage({
   if (!owner) {
     notFound()
   }
-
-  const totalInvoiced = owner.invoices.reduce((sum, inv) => sum + inv.total, 0)
-  const pendingInvoices = owner.invoices.filter(inv => inv.status === "PENDING").length
 
   return (
     <div className="space-y-6">
@@ -241,45 +233,14 @@ export default async function OwnerDetailPage({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-lg bg-muted p-3">
-                <p className="text-sm text-muted-foreground">Total Facturado</p>
-                <p className="text-2xl font-bold">${totalInvoiced.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">Total Pacientes</p>
+                <p className="text-2xl font-bold">{owner.patients.length}</p>
               </div>
               <div className="rounded-lg bg-muted p-3">
-                <p className="text-sm text-muted-foreground">Pendientes</p>
-                <p className="text-2xl font-bold">{pendingInvoices}</p>
+                <p className="text-sm text-muted-foreground">Citas Totales</p>
+                <p className="text-2xl font-bold">-</p>
               </div>
             </div>
-
-            {owner.invoices.length > 0 && (
-              <>
-                <Separator />
-                <div>
-                  <p className="text-sm font-medium mb-2">Ultimas Facturas</p>
-                  <div className="space-y-2">
-                    {owner.invoices.slice(0, 3).map((invoice) => (
-                      <div key={invoice.id} className="flex items-center justify-between text-sm">
-                        <span>{invoice.invoiceNumber}</span>
-                        <div className="flex items-center gap-2">
-                          <span>${invoice.total.toFixed(2)}</span>
-                          <Badge
-                            variant={
-                              invoice.status === "PAID"
-                                ? "success"
-                                : invoice.status === "PENDING"
-                                ? "warning"
-                                : "outline"
-                            }
-                            className="text-xs"
-                          >
-                            {invoice.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
           </CardContent>
         </Card>
 

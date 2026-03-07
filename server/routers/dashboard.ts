@@ -219,11 +219,13 @@ export const dashboardRouter = createTRPCRouter({
       },
       include: {
         patient: {
-          select: {
-            id: true,
-            name: true,
+          include: {
             owner: {
-              select: { firstName: true, lastName: true, phone: true },
+              select: {
+                firstName: true,
+                lastName: true,
+                phone: true
+              },
             },
           },
         },

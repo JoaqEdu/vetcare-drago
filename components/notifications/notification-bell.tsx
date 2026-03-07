@@ -8,8 +8,6 @@ import {
   Bell,
   Calendar,
   Syringe,
-  Package,
-  FileText,
   Info,
   Check,
   Loader2,
@@ -32,16 +30,12 @@ import { cn } from "@/lib/utils"
 const NOTIFICATION_ICONS = {
   APPOINTMENT_REMINDER: Calendar,
   VACCINATION_DUE: Syringe,
-  LOW_STOCK: Package,
-  INVOICE_OVERDUE: FileText,
   GENERAL: Info,
 }
 
 const NOTIFICATION_COLORS = {
   APPOINTMENT_REMINDER: "text-blue-500",
   VACCINATION_DUE: "text-yellow-500",
-  LOW_STOCK: "text-red-500",
-  INVOICE_OVERDUE: "text-orange-500",
   GENERAL: "text-gray-500",
 }
 

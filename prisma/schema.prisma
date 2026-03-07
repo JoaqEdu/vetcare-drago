@@ -10,6 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ===================== ENUMS ====================
@@ -40,6 +41,7 @@ enum Gender {
 enum AppointmentType {
   CHECKUP
   VACCINATION
+  DEWORMING
   SURGERY
   EMERGENCY
   GROOMING
@@ -74,9 +76,13 @@ enum NotificationStatus {
 enum NotificationType {
   APPOINTMENT_REMINDER
   VACCINATION_DUE
-  LOW_STOCK
-  INVOICE_OVERDUE
+  DEWORMING_DUE
   GENERAL
+}
+
+enum TreatmentStatus {
+  ACTIVE
+  COMPLETED
 }
 
 // ==================== MODELS ====================
@@ -105,6 +111,9 @@ model Owner {
   email            String?  @unique
   phone            String
   address          String?
+  alternatePhone   String?
+  city             String?
+  notes            String?
 
   portalEnabled    Boolean  @default(false)
   portalToken      String?  @unique
@@ -129,6 +138,7 @@ model Patient {
   birthDate     DateTime?
   weight        Float?
   color         String?
+  chipNumber    String?
   notes         String?
 
   isActive        Boolean      @default(true)
@@ -140,6 +150,10 @@ model Patient {
 
   appointments  Appointment[]
   vaccinations  Vaccination[]
+  dewormings    Deworming[]
+  dentalRecords DentalRecord[]
+  labResults    LabResult[]
+  xrayRecords   XRayRecord[]
   medicalRecords MedicalRecord[]
   notifications   Notification[]
 
@@ -156,6 +170,11 @@ model Appointment {
   status        AppointmentStatus @default(SCHEDULED)
   notes         String?
 
+  // Campos para citas de vacunación
+  vaccineName         String?
+  vaccineType         String?
+  vaccineManufacturer String?
+
   patientId     String
   patient       Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
@@ -163,6 +182,15 @@ model Appointment {
   vet           User              @relation(fields: [vetId], references: [id], onDelete: Cascade)
 
   medicalRecord    MedicalRecord?
+  dentalRecord     DentalRecord?
+  vaccination      Vaccination?
+  deworming        Deworming?
+  labResult        LabResult?
+  xrayRecord       XRayRecord?
+
+  // Follow-up relationship
+  parentRecordId   String?
+  parentRecord     MedicalRecord?  @relation("RecordFollowUps", fields: [parentRecordId], references: [id], onDelete: SetNull)
 
   notifications Notification[]
 
@@ -172,6 +200,7 @@ model Appointment {
   @@index([scheduledAt])
   @@index([status])
   @@index([type])
+  @@index([parentRecordId])
 }
 
 model Vaccination {
@@ -184,16 +213,124 @@ model Vaccination {
   administeredAt  DateTime @default(now())
   nextDueDate     DateTime?
 
+  // Siguiente vacuna
+  nextVaccineName String?
+  isBooster       Boolean  @default(false)
+
   notes           String?
 
   patientId       String
   patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  appointmentId   String?  @unique
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([patientId])
   @@index([nextDueDate])
+}
+
+model Deworming {
+  id              String   @id @default(cuid())
+  productName     String   // Nombre del desparasitante
+  productType     String?  // Interno, Externo, Ambos
+  manufacturer    String?
+  dose            String?  // Dosis aplicada (ej: "5ml", "1 tableta")
+
+  weight          Float?   // Peso del animal al momento de la aplicación
+  administeredAt  DateTime @default(now())
+  nextDueDate     DateTime?
+
+  // Siguiente desparasitación
+  nextDewormingType String?  // Tipo de siguiente desparasitación
+
+  notes           String?
+
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  appointmentId   String?  @unique
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([nextDueDate])
+}
+
+model DentalRecord {
+  id              String   @id @default(cuid())
+  procedure       String   // Limpieza, Extracción, Tratamiento, etc.
+  teethAffected   String?  // Dientes afectados o tratados
+  findings        String?  // Hallazgos durante el procedimiento
+  treatment       String?  // Tratamiento realizado
+  anesthesia      Boolean  @default(false)
+  nextCheckup     DateTime?
+
+  notes           String?
+
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  appointmentId   String?  @unique
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  performedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([patientId])
+}
+
+model LabResult {
+  id              String   @id @default(cuid())
+  testType        String   // Tipo de análisis (Hemograma, Bioquímica, Urianálisis, etc.)
+  testName        String?  // Nombre específico del test
+  results         String   // Resultados del laboratorio (texto largo)
+  interpretation  String?  // Interpretación del veterinario
+  laboratory      String?  // Laboratorio externo (si aplica)
+  referenceValues String?  // Valores de referencia
+
+  attachmentUrl   String?  // URL del archivo PDF/imagen del resultado
+
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  appointmentId   String?  @unique
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  sampleDate      DateTime @default(now())
+  resultDate      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([patientId])
+}
+
+model XRayRecord {
+  id              String   @id @default(cuid())
+  bodyPart        String   // Parte del cuerpo radiografiada
+  views           String?  // Vistas tomadas (lateral, ventrodorsal, etc.)
+  findings        String   // Hallazgos radiográficos
+  diagnosis       String?  // Diagnóstico basado en la radiografía
+  imageUrl        String?  // URL de la imagen de rayos X
+
+  notes           String?
+
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  appointmentId   String?  @unique
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  performedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([patientId])
 }
 
 model MedicalRecord {
@@ -223,6 +360,10 @@ model MedicalRecord {
   // Notes
   internalNotes    String?
 
+  // Follow-up tracking
+  requiresFollowUp Boolean          @default(false)
+  treatmentStatus  TreatmentStatus?
+
   patientId        String
   patient          Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
@@ -231,6 +372,8 @@ model MedicalRecord {
 
   appointmentId    String?      @unique
   appointment      Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  followUpAppointments Appointment[] @relation("RecordFollowUps")
 
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt

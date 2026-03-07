@@ -13,14 +13,13 @@ export default async function EditAppointmentPage({
   const { id } = await params
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const appointment = await db.appointment.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
     include: {
       patient: {
@@ -31,6 +30,11 @@ export default async function EditAppointmentPage({
               lastName: true,
             },
           },
+        },
+      },
+      medicalRecord: {
+        select: {
+          id: true,
         },
       },
     },

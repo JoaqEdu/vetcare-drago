@@ -27,6 +27,7 @@ import { Separator } from "@/components/ui/separator"
 const TYPE_LABELS: Record<string, string> = {
   CHECKUP: "Consulta",
   VACCINATION: "Vacunacion",
+  DEWORMING: "Desparasitacion",
   SURGERY: "Cirugia",
   EMERGENCY: "Emergencia",
   GROOMING: "Estetica",
@@ -74,14 +75,13 @@ export default async function AppointmentDetailPage({
   const { id } = await params
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const appointment = await db.appointment.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
     include: {
       patient: {
@@ -102,6 +102,35 @@ export default async function AppointmentDetailPage({
 
   if (!appointment) {
     notFound()
+  }
+
+  // Verificar si ya existe un registro vinculado a esta cita específica
+  let existingVaccination = null
+  let existingDeworming = null
+  let existingDental = null
+  let existingLab = null
+  let existingXRay = null
+
+  if (appointment.type === "VACCINATION") {
+    existingVaccination = await db.vaccination.findUnique({
+      where: { appointmentId: id },
+    })
+  } else if (appointment.type === "DEWORMING") {
+    existingDeworming = await db.deworming.findUnique({
+      where: { appointmentId: id },
+    })
+  } else if (appointment.type === "DENTAL") {
+    existingDental = await db.dentalRecord.findUnique({
+      where: { appointmentId: id },
+    })
+  } else if (appointment.type === "LABORATORY") {
+    existingLab = await db.labResult.findUnique({
+      where: { appointmentId: id },
+    })
+  } else if (appointment.type === "XRAY") {
+    existingXRay = await db.xRayRecord.findUnique({
+      where: { appointmentId: id },
+    })
   }
 
   const scheduledAt = new Date(appointment.scheduledAt)
@@ -186,7 +215,12 @@ export default async function AppointmentDetailPage({
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Tipo</p>
-                  <p className="font-medium">{TYPE_LABELS[appointment.type]}</p>
+                  <p className="font-medium">
+                    {TYPE_LABELS[appointment.type]}
+                    {appointment.type === "VACCINATION" && appointment.vaccineName && (
+                      <span className="text-muted-foreground"> - {appointment.vaccineName}</span>
+                    )}
+                  </p>
                 </div>
               </div>
 
@@ -225,6 +259,36 @@ export default async function AppointmentDetailPage({
               </>
             )}
 
+            {/* Vaccine Details - Solo para citas de vacunación */}
+            {appointment.type === "VACCINATION" && appointment.vaccineName && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-3">
+                    Detalles de la Vacuna
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Vacuna:</span>
+                      <span className="font-medium">{appointment.vaccineName}</span>
+                    </div>
+                    {appointment.vaccineType && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Tipo:</span>
+                        <span className="font-medium">{appointment.vaccineType}</span>
+                      </div>
+                    )}
+                    {appointment.vaccineManufacturer && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Laboratorio:</span>
+                        <span className="font-medium">{appointment.vaccineManufacturer}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Status History */}
             <Separator />
             <div>
@@ -252,11 +316,6 @@ export default async function AppointmentDetailPage({
                     <Badge variant={STATUS_COLORS[appointment.status]}>
                       {STATUS_LABELS[appointment.status]}
                     </Badge>
-                    {appointment.confirmedAt && (
-                      <span className="text-sm text-muted-foreground">
-                        Confirmada el {format(new Date(appointment.confirmedAt), "d MMM, HH:mm", { locale: es })}
-                      </span>
-                    )}
                   </div>
                 )}
               </div>
@@ -328,43 +387,272 @@ export default async function AppointmentDetailPage({
             </CardContent>
           </Card>
 
-          {/* Medical Record Link */}
-          {appointment.medicalRecord ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Expediente Medico
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href={`/pacientes/${appointment.patient.id}?tab=historial`}>
-                    Ver Expediente
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : appointment.status === "COMPLETED" || appointment.status === "IN_PROGRESS" ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Expediente Medico
-                </CardTitle>
-                <CardDescription>
-                  No se ha creado un expediente para esta cita
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href={`/pacientes/${appointment.patient.id}/expediente/nuevo?appointmentId=${appointment.id}`}>
-                    Crear Expediente
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
+          {/* Acción Post-Cita - Enrutamiento Inteligente por Tipo */}
+          {(appointment.status === "COMPLETED" || appointment.status === "IN_PROGRESS") && (
+            <>
+              {/* VACCINATION → Formulario de Vacuna */}
+              {appointment.type === "VACCINATION" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className={`h-5 w-5 ${existingVaccination ? "text-green-600" : ""}`} />
+                      Registro de Vacunación
+                    </CardTitle>
+                    <CardDescription>
+                      {existingVaccination
+                        ? "La vacuna ya ha sido registrada"
+                        : "Completar información de la vacuna aplicada"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {existingVaccination ? (
+                      <>
+                        <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3 text-sm">
+                          <p className="font-medium text-green-900 dark:text-green-100">
+                            ✓ Vacuna registrada: {existingVaccination.vaccineName}
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                            {format(new Date(existingVaccination.administeredAt), "PPP", { locale: es })}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          No se pueden registrar duplicados para la misma cita
+                        </p>
+                      </>
+                    ) : (
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link href={`/pacientes/${appointment.patient.id}/vacunas/nueva?appointmentId=${appointment.id}`}>
+                          Registrar Vacuna
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* DEWORMING → Formulario de Desparasitación */}
+              {appointment.type === "DEWORMING" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className={`h-5 w-5 ${existingDeworming ? "text-green-600" : ""}`} />
+                      Registro de Desparasitación
+                    </CardTitle>
+                    <CardDescription>
+                      {existingDeworming
+                        ? "La desparasitación ya ha sido registrada"
+                        : "Completar información del desparasitante aplicado"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {existingDeworming ? (
+                      <>
+                        <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3 text-sm">
+                          <p className="font-medium text-green-900 dark:text-green-100">
+                            ✓ Desparasitación registrada: {existingDeworming.productName}
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                            {format(new Date(existingDeworming.administeredAt), "PPP", { locale: es })}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          No se pueden registrar duplicados para la misma cita
+                        </p>
+                      </>
+                    ) : (
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link href={`/pacientes/${appointment.patient.id}/desparasitaciones/nueva?appointmentId=${appointment.id}`}>
+                          Registrar Desparasitación
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* DENTAL → Formulario Dental */}
+              {appointment.type === "DENTAL" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className={`h-5 w-5 ${existingDental ? "text-green-600" : ""}`} />
+                      Registro Dental
+                    </CardTitle>
+                    <CardDescription>
+                      {existingDental
+                        ? "El procedimiento dental ya ha sido registrado"
+                        : "Completar información del procedimiento dental"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {existingDental ? (
+                      <>
+                        <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3 text-sm">
+                          <p className="font-medium text-green-900 dark:text-green-100">
+                            ✓ Procedimiento registrado: {existingDental.procedure}
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                            {format(new Date(existingDental.performedAt), "PPP", { locale: es })}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          No se pueden registrar duplicados para la misma cita
+                        </p>
+                      </>
+                    ) : (
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link href={`/pacientes/${appointment.patient.id}/dental/nuevo?appointmentId=${appointment.id}`}>
+                          Registrar Procedimiento Dental
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* LABORATORY → Formulario de Laboratorio */}
+              {appointment.type === "LABORATORY" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className={`h-5 w-5 ${existingLab ? "text-green-600" : ""}`} />
+                      Resultados de Laboratorio
+                    </CardTitle>
+                    <CardDescription>
+                      {existingLab
+                        ? "Los resultados de laboratorio ya han sido registrados"
+                        : "Registrar resultados de análisis de laboratorio"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {existingLab ? (
+                      <>
+                        <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3 text-sm">
+                          <p className="font-medium text-green-900 dark:text-green-100">
+                            ✓ Resultados registrados: {existingLab.testType}
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                            {format(new Date(existingLab.sampleDate), "PPP", { locale: es })}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          No se pueden registrar duplicados para la misma cita
+                        </p>
+                      </>
+                    ) : (
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link href={`/pacientes/${appointment.patient.id}/laboratorio/nuevo?appointmentId=${appointment.id}`}>
+                          Registrar Resultados
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* XRAY → Formulario de Rayos X */}
+              {appointment.type === "XRAY" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className={`h-5 w-5 ${existingXRay ? "text-green-600" : ""}`} />
+                      Informe de Rayos X
+                    </CardTitle>
+                    <CardDescription>
+                      {existingXRay
+                        ? "El estudio de rayos X ya ha sido registrado"
+                        : "Registrar hallazgos radiográficos"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {existingXRay ? (
+                      <>
+                        <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-3 text-sm">
+                          <p className="font-medium text-green-900 dark:text-green-100">
+                            ✓ Rayos X registrado: {existingXRay.bodyPart}
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                            {format(new Date(existingXRay.performedAt), "PPP", { locale: es })}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          No se pueden registrar duplicados para la misma cita
+                        </p>
+                      </>
+                    ) : (
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link href={`/pacientes/${appointment.patient.id}/rayos-x/nuevo?appointmentId=${appointment.id}`}>
+                          Registrar Rayos X
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* CHECKUP, SURGERY, EMERGENCY, FOLLOWUP, etc. → Expediente Médico */}
+              {!["VACCINATION", "DEWORMING", "GROOMING", "DENTAL", "LABORATORY", "XRAY"].includes(appointment.type) && (
+                <>
+                  {appointment.medicalRecord ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Expediente Médico
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Button variant="outline" className="w-full" asChild>
+                          <Link href={`/pacientes/${appointment.patient.id}/expediente/${appointment.medicalRecord.id}`}>
+                            Ver Expediente
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Expediente Médico
+                        </CardTitle>
+                        <CardDescription>
+                          No se ha creado un expediente para esta cita
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Button variant="outline" className="w-full" asChild>
+                          <Link href={`/pacientes/${appointment.patient.id}/expediente/nuevo?appointmentId=${appointment.id}`}>
+                            Crear Expediente
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* GROOMING → Sin formulario específico, solo completar cita */}
+              {appointment.type === "GROOMING" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      Cita de Estética
+                    </CardTitle>
+                    <CardDescription>
+                      Este tipo de cita no requiere expediente médico
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      La cita se ha completado. No es necesario crear documentación adicional.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

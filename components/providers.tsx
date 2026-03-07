@@ -6,6 +6,7 @@ import { useState } from "react"
 import { trpc } from "@/lib/trpc"
 import superjson from "superjson"
 import { SessionProvider } from "next-auth/react"
+import { ThemeProvider } from "@/components/theme/theme-provider"
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return ""
@@ -38,12 +39,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <SessionProvider>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-      </trpc.Provider>
-    </SessionProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <SessionProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </trpc.Provider>
+      </SessionProvider>
+    </ThemeProvider>
   )
 }

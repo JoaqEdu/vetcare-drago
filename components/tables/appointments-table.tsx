@@ -21,6 +21,12 @@ import {
   X,
   Play,
   Filter,
+  FileText,
+  Syringe,
+  Bug,
+  Smile,
+  FlaskConical,
+  Scan,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,6 +54,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { trpc } from "@/lib/trpc"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -57,6 +65,7 @@ const TYPE_LABELS: Record<string, string> = {
   EMERGENCY: "Emergencia",
   GROOMING: "Estetica",
   DENTAL: "Dental",
+  DEWORMING: "Desparasitacion",
   LABORATORY: "Laboratorio",
   XRAY: "Rayos X",
   FOLLOWUP: "Seguimiento",
@@ -92,10 +101,75 @@ const SPECIES_LABELS: Record<string, string> = {
   OTHER: "Otro",
 }
 
+// Helper para obtener el URL del formulario según el tipo de cita
+const getRecordFormUrl = (appointment: any): string | null => {
+  const patientId = appointment.patient.id
+  const appointmentId = appointment.id
+
+  switch (appointment.type) {
+    case "VACCINATION":
+      return `/pacientes/${patientId}/vacunas/nueva?appointmentId=${appointmentId}`
+    case "DEWORMING":
+      return `/pacientes/${patientId}/desparasitaciones/nueva?appointmentId=${appointmentId}`
+    case "DENTAL":
+      return `/pacientes/${patientId}/dental/nuevo?appointmentId=${appointmentId}`
+    case "LABORATORY":
+      return `/pacientes/${patientId}/laboratorio/nuevo?appointmentId=${appointmentId}`
+    case "XRAY":
+      return `/pacientes/${patientId}/rayos-x/nuevo?appointmentId=${appointmentId}`
+    case "CHECKUP":
+    case "SURGERY":
+    case "EMERGENCY":
+    case "FOLLOWUP":
+      return `/pacientes/${patientId}/expediente/nuevo?appointmentId=${appointmentId}`
+    case "GROOMING":
+      return null // No requiere registro
+    default:
+      return `/pacientes/${patientId}/expediente/nuevo?appointmentId=${appointmentId}`
+  }
+}
+
+// Helper para obtener el ícono según el tipo de cita
+const getRecordIcon = (type: string) => {
+  switch (type) {
+    case "VACCINATION":
+      return Syringe
+    case "DEWORMING":
+      return Bug
+    case "DENTAL":
+      return Smile
+    case "LABORATORY":
+      return FlaskConical
+    case "XRAY":
+      return Scan
+    default:
+      return FileText
+  }
+}
+
+// Helper para obtener el texto del botón según el tipo de cita
+const getRecordButtonText = (type: string): string => {
+  switch (type) {
+    case "VACCINATION":
+      return "Registrar Vacuna"
+    case "DEWORMING":
+      return "Registrar Desparasitación"
+    case "DENTAL":
+      return "Registrar Dental"
+    case "LABORATORY":
+      return "Registrar Laboratorio"
+    case "XRAY":
+      return "Registrar Rayos X"
+    default:
+      return "Crear Expediente"
+  }
+}
+
 export function AppointmentsTable() {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [showCompleted, setShowCompleted] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
 
@@ -110,8 +184,8 @@ export function AppointmentsTable() {
   const { data, isLoading, refetch } = trpc.appointments.list.useQuery({
     search: debouncedSearch || undefined,
     status: statusFilter !== "all" ? statusFilter as "SCHEDULED" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | "NO_SHOW" : undefined,
-    type: typeFilter !== "all" ? typeFilter as "CHECKUP" | "VACCINATION" | "SURGERY" | "EMERGENCY" | "GROOMING" | "DENTAL" | "LABORATORY" | "XRAY" | "FOLLOWUP" | "OTHER" : undefined,
-    limit: 50,
+    type: typeFilter !== "all" ? typeFilter as "CHECKUP" | "VACCINATION" | "SURGERY" | "EMERGENCY" | "GROOMING" | "DENTAL" | "DEWORMING" | "LABORATORY" | "XRAY" | "FOLLOWUP" | "OTHER" : undefined,
+    limit: 100,
   })
 
   const updateStatus = trpc.appointments.updateStatus.useMutation({
@@ -139,7 +213,15 @@ export function AppointmentsTable() {
     }
   }
 
-  const appointments = data?.appointments ?? []
+  // Filtrar citas:
+  // - Si hay filtro de estado específico, no aplicar filtro cliente
+  // - Si no hay filtro de estado y showCompleted es false, filtrar solo activas
+  const allAppointments = data?.appointments ?? []
+  const appointments = statusFilter !== "all"
+    ? allAppointments // El backend ya filtra por estado
+    : showCompleted
+      ? allAppointments
+      : allAppointments.filter(apt => ["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(apt.status))
 
   const isToday = (date: Date) => {
     const today = new Date()
@@ -168,6 +250,16 @@ export function AppointmentsTable() {
                 className="pl-10"
               />
             </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-completed"
+                checked={showCompleted}
+                onCheckedChange={setShowCompleted}
+              />
+              <Label htmlFor="show-completed" className="text-sm cursor-pointer whitespace-nowrap">
+                Mostrar completadas
+              </Label>
+            </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Estado" />
@@ -183,13 +275,14 @@ export function AppointmentsTable() {
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los tipos</SelectItem>
                 <SelectItem value="CHECKUP">Consulta</SelectItem>
                 <SelectItem value="VACCINATION">Vacunacion</SelectItem>
+                <SelectItem value="DEWORMING">Desparasitacion</SelectItem>
                 <SelectItem value="SURGERY">Cirugia</SelectItem>
                 <SelectItem value="EMERGENCY">Emergencia</SelectItem>
                 <SelectItem value="GROOMING">Estetica</SelectItem>
@@ -240,7 +333,7 @@ export function AppointmentsTable() {
                 <TableHead>Propietario</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -303,79 +396,123 @@ export function AppointmentsTable() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {TYPE_LABELS[appointment.type]}
-                      </Badge>
+                      <div className="space-y-1">
+                        <Badge variant="outline">
+                          {TYPE_LABELS[appointment.type]}
+                        </Badge>
+                        {appointment.type === "VACCINATION" && appointment.vaccineName && (
+                          <div className="text-xs text-muted-foreground">
+                            {appointment.vaccineName}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={STATUS_COLORS[appointment.status]}>
-                        {STATUS_LABELS[appointment.status]}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant={STATUS_COLORS[appointment.status]}>
+                          {STATUS_LABELS[appointment.status]}
+                        </Badge>
+                        {/* Indicador si necesita registro */}
+                        {appointment.status === "COMPLETED" &&
+                         !(appointment as any).hasRecord &&
+                         getRecordFormUrl(appointment) && (
+                          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse" />
+                            Pendiente registro
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Acciones</span>
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Botón de acción rápida si está completada pero no tiene registro */}
+                        {appointment.status === "COMPLETED" &&
+                         !(appointment as any).hasRecord &&
+                         getRecordFormUrl(appointment) && (
+                          <Button
+                            size="sm"
+                            className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => {
+                              const url = getRecordFormUrl(appointment)
+                              if (url) router.push(url)
+                            }}
+                          >
+                            {(() => {
+                              const Icon = getRecordIcon(appointment.type)
+                              return <Icon className="h-3.5 w-3.5" />
+                            })()}
+                            <span className="hidden sm:inline">
+                              {getRecordButtonText(appointment.type)}
+                            </span>
+                            <span className="sm:hidden">Registrar</span>
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/citas/${appointment.id}`)}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            Ver detalle
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/citas/${appointment.id}/editar`)}
-                          >
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {appointment.status === "SCHEDULED" && (
+                        )}
+
+                        {/* Dropdown de acciones siempre visible */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Acciones</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => handleStatusChange(appointment.id, "CONFIRMED")}
+                              onClick={() => router.push(`/citas/${appointment.id}`)}
                             >
-                              <Check className="mr-2 h-4 w-4" />
-                              Confirmar
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver detalle
                             </DropdownMenuItem>
-                          )}
-                          {(appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED") && (
                             <DropdownMenuItem
-                              onClick={() => handleStatusChange(appointment.id, "IN_PROGRESS")}
+                              onClick={() => router.push(`/citas/${appointment.id}/editar`)}
                             >
-                              <Play className="mr-2 h-4 w-4" />
-                              Iniciar
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Editar
                             </DropdownMenuItem>
-                          )}
-                          {appointment.status === "IN_PROGRESS" && (
+                            <DropdownMenuSeparator />
+                            {appointment.status === "SCHEDULED" && (
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(appointment.id, "CONFIRMED")}
+                              >
+                                <Check className="mr-2 h-4 w-4" />
+                                Confirmar
+                              </DropdownMenuItem>
+                            )}
+                            {(appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED") && (
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(appointment.id, "IN_PROGRESS")}
+                              >
+                                <Play className="mr-2 h-4 w-4" />
+                                Iniciar
+                              </DropdownMenuItem>
+                            )}
+                            {appointment.status === "IN_PROGRESS" && (
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(appointment.id, "COMPLETED")}
+                              >
+                                <Check className="mr-2 h-4 w-4" />
+                                Completar
+                              </DropdownMenuItem>
+                            )}
+                            {appointment.status !== "CANCELED" && appointment.status !== "COMPLETED" && (
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(appointment.id, "CANCELED")}
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Cancelar
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => handleStatusChange(appointment.id, "COMPLETED")}
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => handleDelete(appointment.id)}
                             >
-                              <Check className="mr-2 h-4 w-4" />
-                              Completar
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
                             </DropdownMenuItem>
-                          )}
-                          {appointment.status !== "CANCELED" && appointment.status !== "COMPLETED" && (
-                            <DropdownMenuItem
-                              onClick={() => handleStatusChange(appointment.id, "CANCELED")}
-                            >
-                              <X className="mr-2 h-4 w-4" />
-                              Cancelar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDelete(appointment.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

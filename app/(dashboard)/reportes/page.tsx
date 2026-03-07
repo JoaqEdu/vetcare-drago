@@ -7,10 +7,8 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
-  DollarSign,
   Calendar,
   PawPrint,
-  Package,
   Users,
   Loader2,
   ArrowUp,
@@ -112,12 +110,6 @@ export default function ReportesPage() {
     month: selectedMonth,
   })
 
-  const { data: revenueData, isLoading: revenueLoading } = trpc.reports.getRevenueReport.useQuery({
-    startDate,
-    endDate,
-    groupBy: dateRange === "year" ? "month" : "day",
-  })
-
   const { data: appointmentsData, isLoading: appointmentsLoading } = trpc.reports.getAppointmentsReport.useQuery({
     startDate,
     endDate,
@@ -134,14 +126,12 @@ export default function ReportesPage() {
     limit: 5,
   })
 
-  const { data: inventoryData, isLoading: inventoryLoading } = trpc.reports.getInventoryReport.useQuery()
-
   const { data: vetPerformance, isLoading: vetLoading } = trpc.reports.getVetPerformanceReport.useQuery({
     startDate,
     endDate,
   })
 
-  const isLoading = summaryLoading || revenueLoading || appointmentsLoading || patientsLoading
+  const isLoading = summaryLoading || appointmentsLoading || patientsLoading
 
   const months = [
     { value: 1, label: "Enero" },
@@ -209,27 +199,7 @@ export default function ReportesPage() {
 
       {/* Summary Cards */}
       {monthlySummary && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${monthlySummary.revenue.current.toFixed(2)}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                {monthlySummary.revenue.change >= 0 ? (
-                  <ArrowUp className="mr-1 h-3 w-3 text-green-500" />
-                ) : (
-                  <ArrowDown className="mr-1 h-3 w-3 text-red-500" />
-                )}
-                <span className={monthlySummary.revenue.change >= 0 ? "text-green-500" : "text-red-500"}>
-                  {Math.abs(monthlySummary.revenue.change).toFixed(1)}%
-                </span>
-                <span className="ml-1">vs mes anterior</span>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Citas</CardTitle>
@@ -283,96 +253,11 @@ export default function ReportesPage() {
         </div>
       )}
 
-      <Tabs defaultValue="revenue" className="space-y-4">
+      <Tabs defaultValue="appointments" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="revenue">Ingresos</TabsTrigger>
           <TabsTrigger value="appointments">Citas</TabsTrigger>
           <TabsTrigger value="patients">Pacientes</TabsTrigger>
-          <TabsTrigger value="inventory">Inventario</TabsTrigger>
         </TabsList>
-
-        {/* Revenue Tab */}
-        <TabsContent value="revenue" className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Ingresos por Periodo</CardTitle>
-                <CardDescription>
-                  Total: ${revenueData?.summary.totalRevenue.toFixed(2) || "0.00"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {revenueLoading ? (
-                  <div className="flex h-[300px] items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : revenueData?.data && revenueData.data.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={revenueData.data}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(v) => {
-                          const date = new Date(v)
-                          return dateRange === "year"
-                            ? format(date, "MMM", { locale: es })
-                            : format(date, "d", { locale: es })
-                        }}
-                      />
-                      <YAxis tickFormatter={(v) => `$${v}`} />
-                      <Tooltip
-                        formatter={(value) => [`$${Number(value).toFixed(2)}`, "Ingresos"]}
-                        labelFormatter={(label) => format(new Date(label), "d MMM yyyy", { locale: es })}
-                      />
-                      <Bar dataKey="revenue" fill="#0088FE" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                    No hay datos para mostrar
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Servicios</CardTitle>
-                <CardDescription>Servicios mas vendidos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {servicesLoading ? (
-                  <div className="flex h-[250px] items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : topServices && topServices.length > 0 ? (
-                  <div className="space-y-4">
-                    {topServices.map((service, i) => (
-                      <div key={service.description} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="truncate">{service.description}</span>
-                          <span className="font-medium">${service.revenue.toFixed(2)}</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted">
-                          <div
-                            className="h-full rounded-full bg-primary"
-                            style={{
-                              width: `${(service.revenue / topServices[0].revenue) * 100}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-                    No hay datos
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
 
         {/* Appointments Tab */}
         <TabsContent value="appointments" className="space-y-4">
@@ -572,96 +457,6 @@ export default function ReportesPage() {
           </Card>
         </TabsContent>
 
-        {/* Inventory Tab */}
-        <TabsContent value="inventory" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Total Productos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{inventoryData?.totalProducts || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Valor Inventario</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${inventoryData?.totalValue.toFixed(2) || "0.00"}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Stock Bajo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{inventoryData?.lowStockCount || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Sin Stock</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">{inventoryData?.outOfStockCount || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Valor por Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {inventoryLoading ? (
-                  <div className="flex h-[300px] items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : inventoryData?.byCategory && inventoryData.byCategory.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={inventoryData.byCategory} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" tickFormatter={(v) => `$${v}`} />
-                      <YAxis type="category" dataKey="category" width={100} />
-                      <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, "Valor"]} />
-                      <Bar dataKey="value" fill="#8884D8" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                    No hay datos
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumen Financiero</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Costo Total</span>
-                    <span className="font-medium">${inventoryData?.totalValue.toFixed(2) || "0.00"}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Valor de Venta Potencial</span>
-                    <span className="font-medium">${inventoryData?.potentialRevenue.toFixed(2) || "0.00"}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-t pt-4">
-                    <span className="font-medium">Ganancia Potencial</span>
-                    <span className="font-bold text-green-600">
-                      ${inventoryData?.potentialProfit.toFixed(2) || "0.00"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   )

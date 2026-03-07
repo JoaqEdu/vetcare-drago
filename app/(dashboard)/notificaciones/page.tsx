@@ -7,14 +7,11 @@ import {
   Bell,
   Calendar,
   Syringe,
-  Package,
-  FileText,
   Info,
   Check,
   Loader2,
   Trash2,
   RefreshCw,
-  AlertCircle,
   CheckCircle,
   Send,
 } from "lucide-react"
@@ -28,24 +25,18 @@ import { cn } from "@/lib/utils"
 const NOTIFICATION_ICONS = {
   APPOINTMENT_REMINDER: Calendar,
   VACCINATION_DUE: Syringe,
-  LOW_STOCK: Package,
-  INVOICE_OVERDUE: FileText,
   GENERAL: Info,
 }
 
 const NOTIFICATION_COLORS = {
   APPOINTMENT_REMINDER: "text-blue-500 bg-blue-100",
   VACCINATION_DUE: "text-yellow-600 bg-yellow-100",
-  LOW_STOCK: "text-red-500 bg-red-100",
-  INVOICE_OVERDUE: "text-orange-500 bg-orange-100",
   GENERAL: "text-gray-500 bg-gray-100",
 }
 
 const NOTIFICATION_LABELS = {
   APPOINTMENT_REMINDER: "Recordatorio de Cita",
   VACCINATION_DUE: "Vacuna Proxima",
-  LOW_STOCK: "Stock Bajo",
-  INVOICE_OVERDUE: "Factura Vencida",
   GENERAL: "General",
 }
 
@@ -85,13 +76,6 @@ export default function NotificacionesPage() {
     onSuccess: (data) => {
       refetch()
       alert(`Se enviaron ${data.sent} recordatorios de vacunas`)
-    },
-  })
-
-  const checkLowStock = trpc.notifications.checkLowStock.useMutation({
-    onSuccess: (data) => {
-      refetch()
-      alert(`Se encontraron ${data.productsWithLowStock} productos con stock bajo. Se enviaron ${data.sent} notificaciones.`)
     },
   })
 
@@ -182,33 +166,6 @@ export default function NotificacionesPage() {
                 <Send className="mr-2 h-4 w-4" />
               )}
               Notificar Vacunas
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Package className="h-4 w-4 text-red-500" />
-              Stock Bajo
-            </CardTitle>
-            <CardDescription>
-              Verificar productos con stock bajo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={() => checkLowStock.mutate()}
-              disabled={checkLowStock.isPending}
-            >
-              {checkLowStock.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <AlertCircle className="mr-2 h-4 w-4" />
-              )}
-              Verificar Stock
             </Button>
           </CardContent>
         </Card>

@@ -1,4 +1,6 @@
 import { z } from "zod"
+import { TRPCError } from "@trpc/server"
+import { TreatmentStatus, AppointmentType } from "@prisma/client"
 import { createTRPCRouter, protectedProcedure } from "../trpc"
 
 export const medicalRecordsRouter = createTRPCRouter({
@@ -90,6 +92,10 @@ export const medicalRecordsRouter = createTRPCRouter({
         followUpDate: z.date().optional(),
 
         internalNotes: z.string().optional(),
+
+        // Follow-up tracking
+        requiresFollowUp: z.boolean().default(false),
+        treatmentStatus: z.nativeEnum(TreatmentStatus).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -108,16 +114,82 @@ export const medicalRecordsRouter = createTRPCRouter({
         throw new Error("Paciente no encontrado")
       }
 
-      return ctx.db.medicalRecord.create({
+      // Si viene de una cita, verificar que no exista ya un expediente para esa cita
+      if (input.appointmentId) {
+        const existingRecord = await ctx.db.medicalRecord.findFirst({
+          where: { appointmentId: input.appointmentId },
+        })
+
+        if (existingRecord) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Ya existe un expediente médico para esta cita. No se permiten registros duplicados.",
+          })
+        }
+      }
+
+      // Determinar el estado del tratamiento
+      let treatmentStatus = input.treatmentStatus
+
+      // Si requiere seguimiento y no se especificó estado, marcar como ACTIVE
+      if (input.requiresFollowUp && !treatmentStatus) {
+        treatmentStatus = TreatmentStatus.ACTIVE
+      }
+
+      // Si NO requiere seguimiento, marcar como COMPLETED directamente
+      if (!input.requiresFollowUp) {
+        treatmentStatus = TreatmentStatus.COMPLETED
+      }
+
+      const record = await ctx.db.medicalRecord.create({
         data: {
           ...input,
           vetId,
+          treatmentStatus,
         },
         include: {
           patient: true,
           vet: { select: { id: true, name: true } },
         },
       })
+
+      // Si requiere seguimiento y hay fecha de seguimiento, crear cita automática
+      if (input.requiresFollowUp && input.followUpDate && vetId) {
+        try {
+          // Verificar que el usuario existe antes de crear la cita
+          const userExists = await ctx.db.user.findUnique({
+            where: { id: vetId },
+            select: { id: true }
+          })
+
+          if (userExists) {
+            const appointmentType = input.diagnosis?.toLowerCase().includes("cirug")
+              ? "SURGERY"
+              : "FOLLOWUP"
+
+            const notes = input.diagnosis
+              ? `Seguimiento post-tratamiento - Diagnóstico: ${input.diagnosis}`
+              : "Seguimiento post-tratamiento"
+
+            await ctx.db.appointment.create({
+              data: {
+                patientId: input.patientId,
+                vetId,
+                scheduledAt: input.followUpDate,
+                duration: 30,
+                type: AppointmentType.FOLLOWUP,
+                notes,
+                parentRecordId: record.id,
+              },
+            })
+          }
+        } catch (error) {
+          // Si falla la creación de la cita, no afecta el registro médico
+          console.error("Error al crear cita automática de seguimiento:", error)
+        }
+      }
+
+      return record
     }),
 
   // =========================
@@ -185,5 +257,31 @@ export const medicalRecordsRouter = createTRPCRouter({
       })
 
       return { success: true }
+    }),
+
+  // =========================
+  // COMPLETE TREATMENT
+  // =========================
+  completeTreatment: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const record = await ctx.db.medicalRecord.findUnique({
+        where: { id: input.id },
+      })
+
+      if (!record) {
+        throw new Error("Expediente no encontrado")
+      }
+
+      if (!record.requiresFollowUp) {
+        throw new Error("Este expediente no tiene seguimiento activo")
+      }
+
+      return ctx.db.medicalRecord.update({
+        where: { id: input.id },
+        data: {
+          treatmentStatus: TreatmentStatus.COMPLETED,
+        },
+      })
     }),
 })

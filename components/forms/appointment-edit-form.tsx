@@ -4,8 +4,9 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarIcon, Loader2 } from "lucide-react"
+import { CalendarIcon, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -65,6 +66,9 @@ interface Appointment {
   reason: string | null
   notes: string | null
   vetId: string
+  vaccineName: string | null
+  vaccineType: string | null
+  vaccineManufacturer: string | null
   patient: {
     id: string
     name: string
@@ -76,7 +80,9 @@ interface Appointment {
 }
 
 interface AppointmentEditFormProps {
-  appointment: Appointment
+  appointment: Appointment & {
+    medicalRecord?: { id: string } | null
+  }
 }
 
 export function AppointmentEditForm({ appointment }: AppointmentEditFormProps) {
@@ -95,6 +101,10 @@ export function AppointmentEditForm({ appointment }: AppointmentEditFormProps) {
     status: appointment.status,
     reason: appointment.reason || "",
     notes: appointment.notes || "",
+    // Campos para vacunación
+    vaccineName: appointment.vaccineName || "",
+    vaccineType: appointment.vaccineType || "",
+    vaccineManufacturer: appointment.vaccineManufacturer || "",
   })
 
   // Fetch vets for selection
@@ -102,7 +112,21 @@ export function AppointmentEditForm({ appointment }: AppointmentEditFormProps) {
 
   const updateAppointment = trpc.appointments.update.useMutation({
     onSuccess: () => {
-      router.push(`/citas/${appointment.id}`)
+      // Si se marca como COMPLETADA y es VACCINATION, redirigir a crear registro de vacuna
+      if (formData.status === "COMPLETED" && formData.type === "VACCINATION") {
+        router.push(`/pacientes/${appointment.patient.id}/vacunas/nueva?appointmentId=${appointment.id}`)
+      }
+      // Si se marca como COMPLETADA, no tiene expediente, y es tipo médico (no GROOMING ni VACCINATION), redirigir a crear expediente
+      else if (
+        formData.status === "COMPLETED" &&
+        !appointment.medicalRecord &&
+        formData.type !== "GROOMING" &&
+        formData.type !== "VACCINATION"
+      ) {
+        router.push(`/pacientes/${appointment.patient.id}/expediente/nuevo?appointmentId=${appointment.id}`)
+      } else {
+        router.push(`/citas/${appointment.id}`)
+      }
       router.refresh()
     },
     onError: (error) => {
@@ -125,6 +149,12 @@ export function AppointmentEditForm({ appointment }: AppointmentEditFormProps) {
       return
     }
 
+    // Validar campos de vacunación si es tipo VACCINATION
+    if (formData.type === "VACCINATION" && !formData.vaccineName.trim()) {
+      setError("El nombre de la vacuna es requerido para citas de vacunación")
+      return
+    }
+
     setIsSubmitting(true)
 
     // Combine date and time
@@ -141,6 +171,10 @@ export function AppointmentEditForm({ appointment }: AppointmentEditFormProps) {
       status: formData.status as "SCHEDULED" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | "NO_SHOW",
       reason: formData.reason || undefined,
       notes: formData.notes || undefined,
+      // Campos de vacunación (solo si es tipo VACCINATION)
+      vaccineName: formData.type === "VACCINATION" ? formData.vaccineName.trim() || undefined : undefined,
+      vaccineType: formData.type === "VACCINATION" ? formData.vaccineType.trim() || undefined : undefined,
+      vaccineManufacturer: formData.type === "VACCINATION" ? formData.vaccineManufacturer.trim() || undefined : undefined,
     })
   }
 
@@ -233,8 +267,70 @@ export function AppointmentEditForm({ appointment }: AppointmentEditFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.status === "COMPLETED" && formData.type === "VACCINATION" && (
+                  <div className="flex items-start gap-2 rounded-md bg-green-50 dark:bg-green-950/30 p-3 text-sm">
+                    <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
+                    <p className="text-green-700 dark:text-green-300">
+                      Al guardar, serás redirigido automáticamente para registrar los datos de la vacuna aplicada.
+                    </p>
+                  </div>
+                )}
+                {formData.status === "COMPLETED" &&
+                 !appointment.medicalRecord &&
+                 formData.type !== "GROOMING" &&
+                 formData.type !== "VACCINATION" && (
+                  <div className="flex items-start gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 p-3 text-sm">
+                    <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <p className="text-blue-700 dark:text-blue-300">
+                      Al guardar, serás redirigido automáticamente para crear el expediente médico de esta cita.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Campos específicos para vacunación */}
+            {formData.type === "VACCINATION" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="vaccineName">Nombre de la Vacuna *</Label>
+                  <Input
+                    id="vaccineName"
+                    placeholder="Ej: Rabia, Parvovirus, Quintuple..."
+                    value={formData.vaccineName}
+                    onChange={(e) => handleChange("vaccineName", e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Especifica qué vacuna se aplicará en esta cita
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="vaccineType">Tipo de Vacuna</Label>
+                    <Input
+                      id="vaccineType"
+                      placeholder="Ej: Inactivada, Atenuada, Recombinante..."
+                      value={formData.vaccineType}
+                      onChange={(e) => handleChange("vaccineType", e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="vaccineManufacturer">Laboratorio</Label>
+                    <Input
+                      id="vaccineManufacturer"
+                      placeholder="Ej: Zoetis, MSD, Virbac..."
+                      value={formData.vaccineManufacturer}
+                      onChange={(e) => handleChange("vaccineManufacturer", e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="reason">Motivo de la Consulta</Label>

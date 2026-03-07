@@ -4,6 +4,7 @@ import {
   AppointmentStatus,
   AppointmentType,
   UserRole,
+  Prisma,
 } from "@prisma/client"
 
 export const appointmentsRouter = createTRPCRouter({
@@ -61,22 +62,22 @@ export const appointmentsRouter = createTRPCRouter({
         where: {
           ...(search && {
             OR: [
-              { patient: { name: { contains: search, mode: "insensitive" } } },
+              { patient: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } },
               {
                 patient: {
                   owner: {
-                    firstName: { contains: search, mode: "insensitive" },
+                    firstName: { contains: search, mode: Prisma.QueryMode.insensitive },
                   },
                 },
               },
               {
                 patient: {
                   owner: {
-                    lastName: { contains: search, mode: "insensitive" },
+                    lastName: { contains: search, mode: Prisma.QueryMode.insensitive },
                   },
                 },
               },
-              { reason: { contains: search, mode: "insensitive" } },
+              { reason: { contains: search, mode: Prisma.QueryMode.insensitive } },
             ],
           }),
           ...(status && { status }),
@@ -106,6 +107,13 @@ export const appointmentsRouter = createTRPCRouter({
               name: true,
             },
           },
+          // Incluir registros vinculados directamente
+          medicalRecord: { select: { id: true } },
+          vaccination: { select: { id: true } },
+          deworming: { select: { id: true } },
+          dentalRecord: { select: { id: true } },
+          labResult: { select: { id: true } },
+          xrayRecord: { select: { id: true } },
         },
         orderBy: { scheduledAt: "asc" },
         take: limit + 1,
@@ -119,9 +127,155 @@ export const appointmentsRouter = createTRPCRouter({
         nextCursor = nextItem!.id
       }
 
+      // Determinar hasRecord basado en relaciones directas
+      const appointmentsWithRecordStatus = appointments.map((apt) => {
+        let hasRecord = false
+
+        switch (apt.type) {
+          case "CHECKUP":
+          case "SURGERY":
+          case "EMERGENCY":
+          case "FOLLOWUP":
+          case "OTHER":
+            hasRecord = !!apt.medicalRecord
+            break
+          case "VACCINATION":
+            hasRecord = !!apt.vaccination
+            break
+          case "DEWORMING":
+            hasRecord = !!apt.deworming
+            break
+          case "DENTAL":
+            hasRecord = !!apt.dentalRecord
+            break
+          case "LABORATORY":
+            hasRecord = !!apt.labResult
+            break
+          case "XRAY":
+            hasRecord = !!apt.xrayRecord
+            break
+          case "GROOMING":
+            // Las citas de estética no requieren registro
+            hasRecord = true
+            break
+        }
+
+        return {
+          ...apt,
+          hasRecord,
+        }
+      })
+
+      return {
+        appointments: appointmentsWithRecordStatus,
+        nextCursor,
+      }
+    }),
+
+  // =========================
+  // LIST PAGINATED (Offset-based pagination)
+  // =========================
+  listPaginated: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        status: z.nativeEnum(AppointmentStatus).optional(),
+        type: z.nativeEnum(AppointmentType).optional(),
+        vetId: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const {
+        search,
+        status,
+        type,
+        vetId,
+        startDate,
+        endDate,
+        page,
+        pageSize,
+      } = input
+
+      const skip = (page - 1) * pageSize
+
+      // Date filter
+      let dateFilter: { gte?: Date; lte?: Date } | undefined
+      if (startDate || endDate) {
+        dateFilter = {}
+        if (startDate) dateFilter.gte = startDate
+        if (endDate) dateFilter.lte = endDate
+      }
+
+      const where = {
+        ...(search && {
+          OR: [
+            { patient: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            {
+              patient: {
+                owner: {
+                  firstName: { contains: search, mode: Prisma.QueryMode.insensitive },
+                },
+              },
+            },
+            {
+              patient: {
+                owner: {
+                  lastName: { contains: search, mode: Prisma.QueryMode.insensitive },
+                },
+              },
+            },
+            { reason: { contains: search, mode: Prisma.QueryMode.insensitive } },
+          ],
+        }),
+        ...(status && { status }),
+        ...(type && { type }),
+        ...(vetId && { vetId }),
+        ...(dateFilter && { scheduledAt: dateFilter }),
+      }
+
+      const [appointments, total] = await Promise.all([
+        ctx.db.appointment.findMany({
+          where,
+          include: {
+            patient: {
+              select: {
+                id: true,
+                name: true,
+                species: true,
+                owner: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
+            vet: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { scheduledAt: "desc" },
+          skip,
+          take: pageSize,
+        }),
+        ctx.db.appointment.count({ where }),
+      ])
+
       return {
         appointments,
-        nextCursor,
+        total,
+        page,
+        pageSize,
+        pageCount: Math.ceil(total / pageSize),
       }
     }),
 
@@ -196,6 +350,38 @@ export const appointmentsRouter = createTRPCRouter({
   }),
 
   // =========================
+  // GET BY DATE RANGE (para calendario)
+  // =========================
+  getByDateRange: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+        vetId: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.appointment.findMany({
+        where: {
+          scheduledAt: {
+            gte: input.startDate,
+            lte: input.endDate,
+          },
+          ...(input.vetId && { vetId: input.vetId }),
+        },
+        include: {
+          patient: {
+            include: { owner: true },
+          },
+          vet: {
+            select: { name: true },
+          },
+        },
+        orderBy: { scheduledAt: "asc" },
+      })
+    }),
+
+  // =========================
   // CREATE
   // =========================
   create: protectedProcedure
@@ -210,6 +396,12 @@ export const appointmentsRouter = createTRPCRouter({
         ),
         patientId: z.string(),
         vetId: z.string(),
+        // Campos para vacunación
+        vaccineName: z.string().optional(),
+        vaccineType: z.string().optional(),
+        vaccineManufacturer: z.string().optional(),
+        // Vinculación a expediente médico (para seguimientos)
+        parentRecordId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -256,6 +448,10 @@ export const appointmentsRouter = createTRPCRouter({
         reason: z.string().optional(),
         notes: z.string().optional(),
         vetId: z.string().optional(),
+        // Campos para vacunación
+        vaccineName: z.string().optional(),
+        vaccineType: z.string().optional(),
+        vaccineManufacturer: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

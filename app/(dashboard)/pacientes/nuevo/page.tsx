@@ -5,18 +5,21 @@ import { PatientForm } from "@/components/forms/patient-form"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-export default async function NuevoPacientePage() {
+export default async function NuevoPacientePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ownerId?: string }>
+}) {
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
-  // Obtener propietarios de la organizacion
+  const { ownerId } = await searchParams
+
+  // Obtener propietarios
   const owners = await db.owner.findMany({
-    where: {
-      organizationId: session.user.organizationId,
-    },
     select: {
       id: true,
       firstName: true,
@@ -45,7 +48,7 @@ export default async function NuevoPacientePage() {
         </div>
       </div>
 
-      <PatientForm owners={owners} />
+      <PatientForm owners={owners} preselectedOwnerId={ownerId} />
     </div>
   )
 }

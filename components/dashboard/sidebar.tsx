@@ -9,8 +9,7 @@ import {
   PawPrint,
   Users,
   Calendar,
-  FileText,
-  Package,
+  CalendarDays,
   BarChart3,
   Settings,
   LogOut,
@@ -28,6 +27,8 @@ import {
 import { signOut } from "next-auth/react"
 import { useState } from "react"
 import { NotificationBell } from "@/components/notifications/notification-bell"
+import { ThemeToggle } from "@/components/theme/theme-toggle"
+import { CommandPalette } from "@/components/command-palette/command-palette"
 
 const navItems = [
   {
@@ -51,14 +52,9 @@ const navItems = [
     icon: Calendar,
   },
   {
-    title: "Facturacion",
-    href: "/facturacion",
-    icon: FileText,
-  },
-  {
-    title: "Inventario",
-    href: "/inventario",
-    icon: Package,
+    title: "Calendario",
+    href: "/calendario",
+    icon: CalendarDays,
   },
   {
     title: "Notificaciones",
@@ -85,7 +81,6 @@ interface SidebarProps {
     name?: string | null
     email?: string | null
     image?: string | null
-    organizationName?: string
   }
 }
 
@@ -184,7 +179,12 @@ export function Sidebar({ user }: SidebarProps) {
             )}
           </Link>
           <div className="flex items-center gap-1">
-            {!isCollapsed && <NotificationBell />}
+            {!isCollapsed && (
+              <>
+                <ThemeToggle />
+                <NotificationBell />
+              </>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -201,13 +201,10 @@ export function Sidebar({ user }: SidebarProps) {
           </div>
         </div>
 
-        {/* Organization name */}
-        {!isCollapsed && user.organizationName && (
-          <div className="border-b border-sidebar-border px-4 py-3">
-            <p className="text-xs text-sidebar-foreground/50">Organizacion</p>
-            <p className="truncate text-sm font-medium">
-              {user.organizationName}
-            </p>
+        {/* Search - Command Palette */}
+        {!isCollapsed && (
+          <div className="px-3 pt-3">
+            <CommandPalette />
           </div>
         )}
 

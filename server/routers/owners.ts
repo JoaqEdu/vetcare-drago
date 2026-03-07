@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 import { createTRPCRouter, protectedProcedure } from "../trpc"
 import crypto from "crypto"
 
@@ -23,10 +24,10 @@ export const ownersRouter = createTRPCRouter({
           isActive: true,
           ...(search && {
             OR: [
-              { firstName: { contains: search, mode: "insensitive" } },
-              { lastName: { contains: search, mode: "insensitive" } },
-              { email: { contains: search, mode: "insensitive" } },
-              { phone: { contains: search, mode: "insensitive" } },
+              { firstName: { contains: search, mode: Prisma.QueryMode.insensitive } },
+              { lastName: { contains: search, mode: Prisma.QueryMode.insensitive } },
+              { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
+              { phone: { contains: search, mode: Prisma.QueryMode.insensitive } },
             ],
           }),
         },
@@ -57,6 +58,60 @@ export const ownersRouter = createTRPCRouter({
       return {
         owners,
         nextCursor,
+      }
+    }),
+
+  // =========================
+  // LIST PAGINATED (Offset-based pagination)
+  // =========================
+  listPaginated: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        isActive: z.boolean().optional(),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { search, isActive, page, pageSize } = input
+      const skip = (page - 1) * pageSize
+
+      const where = {
+        ...(isActive !== undefined && { isActive }),
+        ...(search && {
+          OR: [
+            { firstName: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { lastName: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { phone: { contains: search } },
+          ],
+        }),
+      }
+
+      const [owners, total] = await Promise.all([
+        ctx.db.owner.findMany({
+          where,
+          include: {
+            _count: {
+              select: {
+                patients: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: pageSize,
+        }),
+        ctx.db.owner.count({ where }),
+      ])
+
+      return {
+        owners,
+        total,
+        page,
+        pageSize,
+        pageCount: Math.ceil(total / pageSize),
       }
     }),
 
@@ -94,13 +149,39 @@ export const ownersRouter = createTRPCRouter({
         email: z.string().email().optional().nullable(),
         phone: z.string().min(1),
         address: z.string().optional(),
+        patients: z
+          .array(
+            z.object({
+              name: z.string().min(1),
+              species: z.enum(["DOG", "CAT", "BIRD", "RABBIT", "OTHER"]),
+              breed: z.string().optional(),
+              gender: z.enum(["MALE", "FEMALE", "UNKNOWN"]).optional(),
+              birthDate: z.date().optional(),
+              weight: z.number().optional(),
+              color: z.string().optional(),
+              chipNumber: z.string().optional(),
+              notes: z.string().optional(),
+            })
+          )
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { patients, ...ownerData } = input
+
       return ctx.db.owner.create({
         data: {
-          ...input,
-          email: input.email ?? null,
+          ...ownerData,
+          email: ownerData.email ?? null,
+          ...(patients &&
+            patients.length > 0 && {
+              patients: {
+                create: patients,
+              },
+            }),
+        },
+        include: {
+          patients: true,
         },
       })
     }),

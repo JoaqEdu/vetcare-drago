@@ -1,15 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Users, Bell, CreditCard, Shield, Palette } from "lucide-react"
+import { Users, Bell, Shield, Palette } from "lucide-react"
 import Link from "next/link"
 
 export default function ConfiguracionPage() {
   const settingsSections = [
-    {
-      title: "Clinica",
-      description: "Informacion general de tu clinica",
-      icon: Building2,
-      href: "/configuracion/clinica",
-    },
     {
       title: "Equipo",
       description: "Gestiona usuarios y permisos",
@@ -21,12 +15,6 @@ export default function ConfiguracionPage() {
       description: "Configura alertas y recordatorios",
       icon: Bell,
       href: "/configuracion/notificaciones",
-    },
-    {
-      title: "Facturacion",
-      description: "Plan y metodos de pago",
-      icon: CreditCard,
-      href: "/configuracion/facturacion",
     },
     {
       title: "Seguridad",

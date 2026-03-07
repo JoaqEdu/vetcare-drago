@@ -13,14 +13,13 @@ export default async function EditOwnerPage({
   const { id } = await params
   const session = await auth()
 
-  if (!session?.user?.organizationId) {
+  if (!session) {
     redirect("/login")
   }
 
   const owner = await db.owner.findFirst({
     where: {
       id,
-      organizationId: session.user.organizationId,
     },
   })
 
