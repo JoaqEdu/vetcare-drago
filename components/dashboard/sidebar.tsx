@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  Stethoscope,
   LayoutDashboard,
   PawPrint,
   Users,
@@ -146,8 +146,14 @@ export function Sidebar({ user }: SidebarProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Stethoscope className="h-5 w-5 text-primary" />
-          <span className="font-bold">VetCare</span>
+          <Image
+            src="/logo-drago.jpg"
+            alt="Veterinaria Drago"
+            width={32}
+            height={32}
+            className="rounded-md"
+          />
+          <span className="font-bold">Vet Drago</span>
         </Link>
         <NotificationBell />
       </div>
@@ -171,11 +177,15 @@ export function Sidebar({ user }: SidebarProps) {
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-              <Stethoscope className="h-5 w-5 text-sidebar-primary-foreground" />
-            </div>
+            <Image
+              src="/logo-drago.jpg"
+              alt="Veterinaria Drago"
+              width={32}
+              height={32}
+              className="rounded-md"
+            />
             {!isCollapsed && (
-              <span className="text-lg font-bold">VetCare</span>
+              <span className="text-lg font-bold">Vet Drago</span>
             )}
           </Link>
           <div className="flex items-center gap-1">

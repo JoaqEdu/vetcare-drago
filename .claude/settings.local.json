@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(wc:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm add:*)",
+      "Bash(grep:*)",
+      "Bash(del:*)",
+      "Bash(npx prisma migrate deploy:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm run build:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:axxdderr.wixsite.com)",
+      "WebFetch(domain:www.facebook.com)",
+      "Bash(timeout /t 8)",
+      "Bash(pnpm dev)",
+      "Bash(ping:*)",
+      "Bash(npx next dev --help:*)",
+      "Bash(npx next dev:*)"
+    ]
+  }
+}

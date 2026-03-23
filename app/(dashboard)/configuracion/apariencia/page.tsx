@@ -44,7 +44,7 @@ export default function AparienciaPage() {
             <CardTitle>Tema</CardTitle>
           </div>
           <CardDescription>
-            Selecciona cómo quieres que se vea VetCare Drago
+            Selecciona cómo quieres que se vea Veterinaria Drago
           </CardDescription>
         </CardHeader>
         <CardContent>

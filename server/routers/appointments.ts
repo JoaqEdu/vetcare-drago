@@ -517,14 +517,12 @@ export const appointmentsRouter = createTRPCRouter({
     }),
 
   // =========================
-  // GET VETS
+  // GET VETS (solo veterinarios, no admin)
   // =========================
   getVets: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.user.findMany({
       where: {
-        role: {
-          in: [UserRole.VET, UserRole.ADMIN],
-        },
+        role: UserRole.VET,
         isActive: true,
       },
       select: {

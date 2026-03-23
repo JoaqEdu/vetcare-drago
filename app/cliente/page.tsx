@@ -1,6 +1,5 @@
-import Link from "next/link"
 import Image from "next/image"
-import { PawPrint, Phone, MapPin, Clock, Syringe, Stethoscope, Scissors, Bath, Heart, ChevronRight } from "lucide-react"
+import { Phone, MapPin, Clock, Syringe, Stethoscope, Scissors, Bath, Heart, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const services = [
@@ -29,19 +28,14 @@ const services = [
     title: "Banos Medicados",
     description: "Tratamientos dermatologicos especializados",
   },
-  {
-    icon: PawPrint,
-    title: "Tratamientos",
-    description: "Cuidado integral para la salud de tu mascota",
-  },
 ]
 
-export default function LandingPage() {
+export default function ClienteLandingPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-sky-200">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image
               src="/logo-drago.jpg"
@@ -63,20 +57,15 @@ export default function LandingPage() {
               Contacto
             </a>
           </nav>
-          <div className="flex items-center gap-3">
-            <a
-              href="https://wa.me/51935841065"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 text-sm font-semibold text-slate-600"
-            >
-              <Phone className="h-4 w-4" />
-              935 841 065
-            </a>
-            <Link href="/login">
-              <Button className="shadow-md">Ingresar</Button>
-            </Link>
-          </div>
+          <a
+            href="https://wa.me/51935841065"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600"
+          >
+            <Phone className="h-4 w-4" />
+            <span className="hidden sm:inline">935 841 065</span>
+          </a>
         </div>
       </header>
 
@@ -85,7 +74,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6 z-10">
-              <h1 className="text-5xl md:text-7xl font-bold text-sky-950 leading-tight drop-shadow-sm">
+              <h1 className="text-4xl md:text-6xl font-bold text-sky-950 leading-tight drop-shadow-sm">
                 Te<br />cuido
               </h1>
               <p className="text-xl text-sky-900 font-medium">
@@ -95,9 +84,9 @@ export default function LandingPage() {
                 Dedicados al cuidado de tu mascota
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <a href="https://wa.me/51935841065?text=Hola,%20quiero%20agendar%20una%20cita" target="_blank" rel="noopener noreferrer">
+                <a href="https://wa.me/51935841065?text=Hola,%20quiero%20agendar%20una%20cita%20para%20mi%20mascota" target="_blank" rel="noopener noreferrer">
                   <Button size="lg" className="gap-2 shadow-lg">
-                    Programa una visita
+                    Agendar cita
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </a>
@@ -124,7 +113,7 @@ export default function LandingPage() {
       </section>
 
       {/* Services Section */}
-      <section id="servicios" className="py-20 bg-white/80 backdrop-blur-sm">
+      <section id="servicios" className="py-16 bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
@@ -134,7 +123,7 @@ export default function LandingPage() {
               Ofrecemos atencion veterinaria integral para el bienestar de tu mascota
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {services.map((service) => (
               <div
                 key={service.title}
@@ -156,22 +145,22 @@ export default function LandingPage() {
       </section>
 
       {/* About Section */}
-      <section id="nosotros" className="py-20">
+      <section id="nosotros" className="py-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center space-y-6">
               <h2 className="text-3xl md:text-4xl font-bold text-sky-950">
                 Dr. Carlos Liberato Tucto
               </h2>
               <p className="text-xl text-sky-700 font-semibold">
-                Medico Veterinario - C.M.V.P. N° 6574
+                Medico Veterinario - C.M.V.P. N 6574
               </p>
-              <p className="text-sky-900 leading-relaxed text-lg">
+              <p className="text-sky-900 leading-relaxed max-w-2xl mx-auto text-lg">
                 Con anos de experiencia en medicina veterinaria, el Dr. Carlos Liberato
                 brinda atencion profesional y dedicada para el cuidado de tu mascota.
                 Especializado en medicina preventiva, cirugia y tratamientos integrales.
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap justify-center gap-6 pt-4">
                 <div className="flex items-center gap-2 text-sky-900 font-medium">
                   <div className="w-3 h-3 rounded-full bg-sky-600" />
                   Atencion personalizada
@@ -186,20 +175,15 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-center">
-              <div className="w-64 h-64 md:w-80 md:h-80 rounded-2xl bg-white/80 shadow-xl flex items-center justify-center border-4 border-sky-200">
-                <Stethoscope className="h-24 w-24 md:h-32 md:w-32 text-sky-500" />
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="contacto" className="py-20 bg-white/80 backdrop-blur-sm">
+      <section id="contacto" className="py-16 bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-10">
               <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
                 Contactanos
               </h2>
@@ -207,7 +191,7 @@ export default function LandingPage() {
                 Estamos para ayudarte con el cuidado de tu mascota
               </p>
             </div>
-            <div className="grid sm:grid-cols-3 gap-6 mb-12">
+            <div className="grid sm:grid-cols-3 gap-6 mb-10">
               <div className="text-center p-6 rounded-2xl bg-sky-50 border-2 border-sky-200 shadow-md">
                 <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center mx-auto mb-4">
                   <Phone className="h-7 w-7 text-sky-600" />
@@ -234,7 +218,7 @@ export default function LandingPage() {
             </div>
             <div className="text-center">
               <a
-                href="https://wa.me/51935841065?text=Hola,%20quiero%20informacion%20sobre%20los%20servicios"
+                href="https://wa.me/51935841065?text=Hola,%20quiero%20informacion%20sobre%20los%20servicios%20veterinarios"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -251,7 +235,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-sky-900 text-white py-12">
+      <footer className="bg-sky-900 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">

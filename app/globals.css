@@ -14,13 +14,13 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Primary (Azul profesional) */
-    --primary: 199 89% 48%;
-    --primary-foreground: 0 0% 98%;
+    /* Primary (Celeste Veterinaria Drago) */
+    --primary: 197 85% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary (Verde salud) */
-    --secondary: 142 76% 36%;
-    --secondary-foreground: 0 0% 98%;
+    /* Secondary (Celeste oscuro) */
+    --secondary: 200 80% 45%;
+    --secondary-foreground: 0 0% 100%;
 
     /* Muted */
     --muted: 240 4.8% 95.9%;
@@ -37,14 +37,14 @@
     /* Border & Input */
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 199 89% 48%;
+    --ring: 197 85% 55%;
 
     /* Radius */
     --radius: 0.5rem;
 
     /* Chart Colors */
-    --chart-1: 199 89% 48%;
-    --chart-2: 142 76% 36%;
+    --chart-1: 197 85% 55%;
+    --chart-2: 200 80% 45%;
     --chart-3: 38 92% 50%;
     --chart-4: 0 84.2% 60.2%;
     --chart-5: 271 81% 56%;
@@ -63,12 +63,12 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    /* Primary */
-    --primary: 199 89% 48%;
+    /* Primary (Celeste Veterinaria Drago) */
+    --primary: 197 85% 55%;
     --primary-foreground: 240 10% 3.9%;
 
-    /* Secondary */
-    --secondary: 142 76% 36%;
+    /* Secondary (Celeste oscuro) */
+    --secondary: 200 80% 45%;
     --secondary-foreground: 0 0% 98%;
 
     /* Muted */
@@ -86,11 +86,11 @@
     /* Border & Input */
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 199 89% 48%;
+    --ring: 197 85% 55%;
 
     /* Chart Colors */
-    --chart-1: 199 89% 48%;
-    --chart-2: 142 76% 36%;
+    --chart-1: 197 85% 55%;
+    --chart-2: 200 80% 45%;
     --chart-3: 38 92% 50%;
     --chart-4: 0 84.2% 60.2%;
     --chart-5: 271 81% 56%;
@@ -156,9 +156,18 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    /* Fondo degradado: celeste en esquinas, blanco en centro */
+    background: radial-gradient(ellipse at center, #ffffff 0%, #e0f4fc 50%, #b8e6f9 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  html.dark body {
+    /* Dark mode: degradado oscuro con tonos celeste */
+    background: radial-gradient(ellipse at center, hsl(220 15% 8%) 0%, hsl(200 25% 12%) 50%, hsl(200 30% 8%) 100%);
   }
 
   /* Smooth scrolling */

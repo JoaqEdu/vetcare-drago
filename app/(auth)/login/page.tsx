@@ -15,7 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Stethoscope, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
+import Image from "next/image"
 
 function LoginForm() {
   const router = useRouter()
@@ -56,10 +57,16 @@ function LoginForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-          <Stethoscope className="h-6 w-6 text-primary-foreground" />
+        <div className="mx-auto mb-4">
+          <Image
+            src="/logo-drago.jpg"
+            alt="Veterinaria Drago"
+            width={80}
+            height={80}
+            className="rounded-xl"
+          />
         </div>
-        <CardTitle className="text-2xl">Bienvenido a VetCare</CardTitle>
+        <CardTitle className="text-2xl">Veterinaria Drago</CardTitle>
         <CardDescription>
           Ingresa tus credenciales para acceder al sistema
         </CardDescription>

@@ -65,7 +65,7 @@ export const MedicalRecordPDF = ({ record, patient }: any) => (
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Expediente Médico</Text>
-          <Text style={styles.subtitle}>VetCare Drago</Text>
+          <Text style={styles.subtitle}>Veterinaria Drago</Text>
         </View>
         <View>
           <Text>
@@ -184,8 +184,8 @@ export const MedicalRecordPDF = ({ record, patient }: any) => (
 
       {/* Footer */}
       <Text style={styles.footer}>
-        Generado el {new Date().toLocaleDateString("es-ES")} | VetCare Drago -
-        Sistema de Gestión Veterinaria
+        Generado el {new Date().toLocaleDateString("es-ES")} | Veterinaria Drago -
+        Dedicados al cuidado de tu mascota
       </Text>
     </Page>
   </Document>

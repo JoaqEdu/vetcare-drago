@@ -8,13 +8,27 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { trpc } from "@/lib/trpc"
 
 export default function SeguridadPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+  })
+
+  const changePassword = trpc.users.changePassword.useMutation({
+    onSuccess: () => {
+      toast.success("Contraseña actualizada exitosamente")
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      })
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al actualizar la contraseña")
+    },
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,19 +44,13 @@ export default function SeguridadPage() {
       return
     }
 
-    setIsSubmitting(true)
-
-    // Simular actualización (aquí iría el endpoint real)
-    setTimeout(() => {
-      toast.success("Contraseña actualizada exitosamente")
-      setFormData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      })
-      setIsSubmitting(false)
-    }, 1000)
+    changePassword.mutate({
+      currentPassword: formData.currentPassword,
+      newPassword: formData.newPassword,
+    })
   }
+
+  const isSubmitting = changePassword.isPending
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))

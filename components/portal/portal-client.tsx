@@ -4,6 +4,8 @@ import { useState } from "react"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import Link from "next/link"
+import Image from "next/image"
 import {
   PawPrint,
   Calendar,
@@ -118,10 +120,10 @@ export function PortalClient({ owner }: PortalClientProps) {
   }, {}) || {}
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Portal del Cliente</h1>
@@ -129,10 +131,16 @@ export function PortalClient({ owner }: PortalClientProps) {
                 Bienvenido/a, {owner.firstName} {owner.lastName}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <PawPrint className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold">VetCare Drago</span>
-            </div>
+            <Link href="/cliente" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <Image
+                src="/logo-drago.jpg"
+                alt="Veterinaria Drago"
+                width={56}
+                height={56}
+                className="rounded-lg"
+              />
+              <span className="text-xl font-bold hidden sm:block">Veterinaria Drago</span>
+            </Link>
           </div>
         </div>
       </div>

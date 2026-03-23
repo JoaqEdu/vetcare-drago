@@ -13,9 +13,12 @@ import {
   Mail,
   Phone,
   Loader2,
+  KeyRound,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Table,
   TableBody,
@@ -31,8 +34,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { trpc } from "@/lib/trpc"
+import { toast } from "sonner"
 
 interface User {
   id: string
@@ -63,10 +75,31 @@ const ROLE_COLORS: Record<string, "default" | "secondary" | "outline"> = {
 export function TeamMembersTable({ users: initialUsers }: TeamMembersTableProps) {
   const router = useRouter()
   const [users, setUsers] = useState(initialUsers)
+  const [resetPasswordDialog, setResetPasswordDialog] = useState<{
+    open: boolean
+    userId: string
+    userName: string
+  }>({ open: false, userId: "", userName: "" })
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
   const deleteUser = trpc.users.delete.useMutation({
     onSuccess: (_, variables) => {
       setUsers((prev) => prev.filter((u) => u.id !== variables.id))
+      toast.success("Usuario eliminado exitosamente")
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al eliminar usuario")
+    },
+  })
+
+  const resetPassword = trpc.users.resetPassword.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Contraseña de ${data.userName} actualizada exitosamente`)
+      closeResetDialog()
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al resetear contraseña")
     },
   })
 
@@ -78,6 +111,35 @@ export function TeamMembersTable({ users: initialUsers }: TeamMembersTableProps)
     ) {
       deleteUser.mutate({ id })
     }
+  }
+
+  const openResetDialog = (userId: string, userName: string) => {
+    setResetPasswordDialog({ open: true, userId, userName })
+    setNewPassword("")
+    setConfirmPassword("")
+  }
+
+  const closeResetDialog = () => {
+    setResetPasswordDialog({ open: false, userId: "", userName: "" })
+    setNewPassword("")
+    setConfirmPassword("")
+  }
+
+  const handleResetPassword = () => {
+    if (newPassword.length < 8) {
+      toast.error("La contraseña debe tener al menos 8 caracteres")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Las contraseñas no coinciden")
+      return
+    }
+
+    resetPassword.mutate({
+      userId: resetPasswordDialog.userId,
+      newPassword,
+    })
   }
 
   return (
@@ -170,6 +232,12 @@ export function TeamMembersTable({ users: initialUsers }: TeamMembersTableProps)
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openResetDialog(user.id, user.name)}
+                        >
+                          <KeyRound className="mr-2 h-4 w-4" />
+                          Resetear Contraseña
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
@@ -198,6 +266,67 @@ export function TeamMembersTable({ users: initialUsers }: TeamMembersTableProps)
           </div>
         )}
       </CardContent>
+
+      {/* Dialog para resetear contraseña */}
+      <Dialog open={resetPasswordDialog.open} onOpenChange={(open) => !open && closeResetDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resetear Contraseña</DialogTitle>
+            <DialogDescription>
+              Establece una nueva contraseña para <span className="font-semibold">{resetPasswordDialog.userName}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nueva Contraseña</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                placeholder="••••••••"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={resetPassword.isPending}
+              />
+              <p className="text-sm text-muted-foreground">
+                Mínimo 8 caracteres
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={resetPassword.isPending}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeResetDialog}
+              disabled={resetPassword.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleResetPassword}
+              disabled={resetPassword.isPending || !newPassword || !confirmPassword}
+            >
+              {resetPassword.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                "Guardar Contraseña"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

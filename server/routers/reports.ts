@@ -244,7 +244,7 @@ export const reportsRouter = createTRPCRouter({
       })
 
       const vets = await ctx.db.user.findMany({
-        where: { role: { in: ["VET", "ADMIN"] } },
+        where: { role: "VET" },
       })
 
       return vets.map((vet) => ({

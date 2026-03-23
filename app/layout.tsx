@@ -4,8 +4,8 @@ import { Providers } from "@/components/providers"
 import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
-  title: "VetCare - Clinica Drago",
-  description: "Plataforma para gestion de Pacientes",
+  title: "Veterinaria Drago",
+  description: "Dedicados al cuidado de tu mascota",
 }
 
 export default function RootLayout({

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { CalendarIcon, Loader2, Search } from "lucide-react"
@@ -52,9 +53,14 @@ const DURATION_OPTIONS = [
 export function AppointmentForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
   const preselectedPatientId = searchParams.get("patientId")
   const preselectedType = searchParams.get("type")
   const parentRecordId = searchParams.get("parentRecordId")
+
+  // Verificar si el usuario es veterinario (se auto-asigna)
+  const isVet = session?.user?.role === "VET"
+  const currentUserId = session?.user?.id
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -75,14 +81,24 @@ export function AppointmentForm() {
     vaccineManufacturer: "",
   })
 
+  // Si es veterinario, auto-asignar su ID
+  useEffect(() => {
+    if (isVet && currentUserId && !formData.vetId) {
+      setFormData(prev => ({ ...prev, vetId: currentUserId }))
+    }
+  }, [isVet, currentUserId, formData.vetId])
+
   // Fetch patients for selection
   const { data: patientsData, isLoading: loadingPatients } = trpc.patients.list.useQuery({
     search: patientSearch || undefined,
     limit: 20,
   })
 
-  // Fetch vets for selection
-  const { data: vets, isLoading: loadingVets } = trpc.appointments.getVets.useQuery()
+  // Fetch vets for selection (solo si no es VET)
+  const { data: vets, isLoading: loadingVets } = trpc.appointments.getVets.useQuery(
+    undefined,
+    { enabled: !isVet }
+  )
 
   const createAppointment = trpc.appointments.create.useMutation({
     onSuccess: () => {
@@ -104,7 +120,7 @@ export function AppointmentForm() {
       return
     }
 
-    if (!formData.vetId) {
+    if (!formData.vetId && !isVet) {
       setError("Selecciona un veterinario")
       return
     }
@@ -216,22 +232,31 @@ export function AppointmentForm() {
 
             <div className="space-y-2">
               <Label htmlFor="vetId">Veterinario *</Label>
-              <Select
-                value={formData.vetId}
-                onValueChange={(value) => handleChange("vetId", value)}
-                disabled={isSubmitting || loadingVets}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar veterinario" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vets?.map((vet) => (
-                    <SelectItem key={vet.id} value={vet.id}>
-                      {vet.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isVet ? (
+                // Si es veterinario, mostrar su nombre (auto-asignado)
+                <div className="rounded-md border bg-muted/50 p-3">
+                  <p className="font-medium">{session?.user?.name}</p>
+                  <p className="text-sm text-muted-foreground">Asignado automaticamente</p>
+                </div>
+              ) : (
+                // Si es admin/asistente, mostrar selector
+                <Select
+                  value={formData.vetId}
+                  onValueChange={(value) => handleChange("vetId", value)}
+                  disabled={isSubmitting || loadingVets}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar veterinario" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vets?.map((vet) => (
+                      <SelectItem key={vet.id} value={vet.id}>
+                        {vet.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
