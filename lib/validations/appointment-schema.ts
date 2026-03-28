@@ -1,5 +1,28 @@
 import { z } from "zod"
-import { AppointmentType, AppointmentStatus } from "@prisma/client"
+
+// Enums definidos manualmente para evitar importar @prisma/client en el navegador
+const AppointmentType = {
+  CHECKUP: "CHECKUP",
+  VACCINATION: "VACCINATION",
+  DEWORMING: "DEWORMING",
+  SURGERY: "SURGERY",
+  EMERGENCY: "EMERGENCY",
+  GROOMING: "GROOMING",
+  DENTAL: "DENTAL",
+  LABORATORY: "LABORATORY",
+  XRAY: "XRAY",
+  FOLLOWUP: "FOLLOWUP",
+  OTHER: "OTHER",
+} as const
+
+const AppointmentStatus = {
+  SCHEDULED: "SCHEDULED",
+  CONFIRMED: "CONFIRMED",
+  IN_PROGRESS: "IN_PROGRESS",
+  COMPLETED: "COMPLETED",
+  CANCELED: "CANCELED",
+  NO_SHOW: "NO_SHOW",
+} as const
 
 export const appointmentSchema = z.object({
   patientId: z.string()

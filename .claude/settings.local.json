@@ -26,7 +26,10 @@
       "Bash(npx next dev --help:*)",
       "Bash(npx next dev:*)",
       "Bash(openssl rand:*)",
-      "Bash(npx prisma db seed:*)"
+      "Bash(npx prisma db seed:*)",
+      "Bash(pnpm install)",
+      "Bash(git add:*)",
+      "Bash(git push)"
     ]
   }
 }

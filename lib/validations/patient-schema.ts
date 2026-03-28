@@ -1,5 +1,22 @@
 import { z } from "zod"
-import { Species, Gender } from "@prisma/client"
+
+// Enums definidos manualmente para evitar importar @prisma/client en el navegador
+const Species = {
+  DOG: "DOG",
+  CAT: "CAT",
+  BIRD: "BIRD",
+  RABBIT: "RABBIT",
+  HAMSTER: "HAMSTER",
+  FISH: "FISH",
+  REPTILE: "REPTILE",
+  OTHER: "OTHER",
+} as const
+
+const Gender = {
+  MALE: "MALE",
+  FEMALE: "FEMALE",
+  UNKNOWN: "UNKNOWN",
+} as const
 
 export const patientSchema = z.object({
   name: z.string()

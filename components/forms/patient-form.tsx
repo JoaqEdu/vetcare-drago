@@ -36,24 +36,23 @@ import { cn } from "@/lib/utils"
 import { trpc } from "@/lib/trpc"
 import { patientSchema, type PatientFormData } from "@/lib/validations/patient-schema"
 import { toast } from "sonner"
-import { Species, Gender } from "@prisma/client"
 
 const SPECIES_OPTIONS = [
-  { value: "DOG" as Species, label: "Perro" },
-  { value: "CAT" as Species, label: "Gato" },
-  { value: "BIRD" as Species, label: "Ave" },
-  { value: "RABBIT" as Species, label: "Conejo" },
-  { value: "HAMSTER" as Species, label: "Hamster" },
-  { value: "FISH" as Species, label: "Pez" },
-  { value: "REPTILE" as Species, label: "Reptil" },
-  { value: "OTHER" as Species, label: "Otro" },
-]
+  { value: "DOG", label: "Perro" },
+  { value: "CAT", label: "Gato" },
+  { value: "BIRD", label: "Ave" },
+  { value: "RABBIT", label: "Conejo" },
+  { value: "HAMSTER", label: "Hamster" },
+  { value: "FISH", label: "Pez" },
+  { value: "REPTILE", label: "Reptil" },
+  { value: "OTHER", label: "Otro" },
+] as const
 
 const GENDER_OPTIONS = [
-  { value: "MALE" as Gender, label: "Macho" },
-  { value: "FEMALE" as Gender, label: "Hembra" },
-  { value: "UNKNOWN" as Gender, label: "Desconocido" },
-]
+  { value: "MALE", label: "Macho" },
+  { value: "FEMALE", label: "Hembra" },
+  { value: "UNKNOWN", label: "Desconocido" },
+] as const
 
 interface Owner {
   id: string
