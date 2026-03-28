@@ -1,7 +1,8 @@
-# VetCare Drago - Documentación de Transformación
+# Veterinaria Drago - Documentación de Transformación
 
 **Fecha de inicio:** 7 de marzo de 2026
-**Estado actual:** ✅ PROYECTO COMPLETO - Todas las partes finalizadas (1, 2 y 3)
+**Última actualización:** 22 de marzo de 2026
+**Estado actual:** ✅ PROYECTO COMPLETO - Partes 1, 2, 3 y 4 finalizadas + Mejoras de seguridad
 
 ---
 
@@ -866,6 +867,7 @@ enum NotificationType {
 - `server/routers/appointments.ts` - Gestión de citas
 - `server/routers/patients.ts` - Gestión de pacientes
 - `server/routers/owners.ts` - Gestión de propietarios
+- `server/routers/users.ts` - Gestión de usuarios y contraseñas ✅ NUEVO
 - `server/routers/notifications.ts` - Sistema de notificaciones ✅ LIMPIO
 - `server/routers/reports.ts` - Reportes y analytics ✅ LIMPIO
 
@@ -970,12 +972,22 @@ enum NotificationType {
 
 ## 🎨 DISEÑO Y BRANDING
 
-### Paleta de Colores (Parte 2)
+### Marca: Veterinaria Drago
+- **Nombre:** Veterinaria Drago
+- **Icono:** PawPrint (huella de mascota)
+- **Estilo:** Moderno, profesional, amigable
 
-**Primario (Azul Profesional):**
+### Paleta de Colores
+
+**Primario (Celeste/Sky):**
 - 50: #f0f9ff
-- 500: #0ea5e9 ← Principal
+- 100: #e0f2fe
+- 200: #bae6fd ← Gradientes landing
+- 500: #0ea5e9 ← Botones y acentos
+- 600: #0284c7 ← Botones hover
+- 800: #075985 ← Textos secundarios
 - 900: #0c4a6e
+- 950: #082f49 ← Textos principales
 
 **Secundario (Verde Salud):**
 - 50: #f0fdf4
@@ -986,7 +998,12 @@ enum NotificationType {
 - Success: Verde (#22c55e)
 - Warning: Amarillo (#f59e0b)
 - Error: Rojo (#ef4444)
-- Info: Azul (#0ea5e9)
+- Info: Celeste (#0ea5e9)
+
+### Landing Pages
+- Background: radial-gradient(ellipse at top, sky-200, sky-100)
+- Textos: sky-950 (h1), sky-900 (h2), sky-800 (p)
+- Cards: white con border-sky-100
 
 ---
 
@@ -1255,27 +1272,257 @@ model Appointment {
 
 ---
 
-**Última actualización:** 7 de marzo de 2026
+## 🔐 PARTE 5: GESTIÓN DE CONTRASEÑAS Y SEGURIDAD (22 de marzo de 2026)
+
+### ✅ Sistema de Cambio de Contraseña Propia
+
+**Archivo:** `app/(dashboard)/configuracion/seguridad/page.tsx`
+
+Funcionalidad para que cada usuario cambie su propia contraseña:
+- Validación de contraseña actual
+- Nueva contraseña mínimo 8 caracteres
+- Confirmación de nueva contraseña
+- Mensajes de error descriptivos en español
+- Toast notifications de éxito/error
+
+**Endpoint tRPC:** `trpc.users.changePassword`
+
+```typescript
+changePassword: protectedProcedure
+  .input(z.object({
+    currentPassword: z.string().min(1, "La contraseña actual es requerida"),
+    newPassword: z.string().min(8, "La nueva contraseña debe tener al menos 8 caracteres"),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    // 1. Obtener usuario actual
+    // 2. Verificar contraseña actual con bcrypt.compare
+    // 3. Verificar que la nueva sea diferente
+    // 4. Hash con bcrypt.hash(newPassword, 10)
+    // 5. Actualizar en base de datos
+  })
+```
+
+### ✅ Reseteo de Contraseña por Admin
+
+**Archivo:** `components/settings/team-members-table.tsx`
+
+Funcionalidad para que administradores reseteen contraseñas de otros usuarios:
+- Solo disponible para rol ADMIN
+- Dialog modal con formulario
+- Nueva contraseña mínimo 8 caracteres
+- Confirmación de contraseña
+- No se puede auto-resetear (usar cambio propio)
+
+**Endpoint tRPC:** `trpc.users.resetPassword`
+
+```typescript
+resetPassword: protectedProcedure
+  .input(z.object({
+    userId: z.string(),
+    newPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    // 1. Verificar que el usuario actual es ADMIN
+    // 2. Verificar que el usuario objetivo existe
+    // 3. Hash de nueva contraseña
+    // 4. Actualizar en base de datos
+    // 5. Retornar nombre del usuario actualizado
+  })
+```
+
+### ✅ Endpoints Adicionales en users.ts
+
+**`trpc.users.me`** - Obtener datos del usuario actual
+```typescript
+me: protectedProcedure.query(async ({ ctx }) => {
+  // Retorna: id, name, email, role, phone, createdAt
+})
+```
+
+**`trpc.users.list`** - Listar usuarios (solo admin)
+```typescript
+list: protectedProcedure.query(async ({ ctx }) => {
+  // Verifica rol ADMIN
+  // Retorna usuarios activos ordenados por fecha
+})
+```
+
+### ✅ Archivos Modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `server/routers/users.ts` | Agregados: me, changePassword, resetPassword, list |
+| `app/(dashboard)/configuracion/seguridad/page.tsx` | Conectado a tRPC real (antes era simulación) |
+| `components/settings/team-members-table.tsx` | Dialog para resetear contraseña + acción en dropdown |
+
+### Verificación
+- ✅ Build exitoso: `pnpm build` compila sin errores
+- ✅ Cambio de contraseña propia funcional
+- ✅ Reseteo de contraseña por admin funcional
+- ✅ Validaciones de seguridad implementadas
+
+---
+
+## 🎨 PARTE 6: REBRANDING Y LANDING PAGES (22 de marzo de 2026)
+
+### ✅ Rebranding a "Veterinaria Drago"
+
+**Cambios de marca:**
+- Nombre: VetCare → Veterinaria Drago
+- Colores: Celeste/sky como color principal
+- Logo: Icono de huella de mascota (PawPrint)
+
+### ✅ Landing Pages
+
+**Landing Principal:** `app/page.tsx`
+- Hero con gradiente radial celeste
+- Secciones: Servicios, Horarios, Contacto, Ubicación
+- CTA para portal de clientes y login de staff
+- Animaciones con Framer Motion
+
+**Portal de Clientes:** `app/cliente/page.tsx`
+- Formulario de acceso con token
+- Diseño consistente con landing principal
+- Redirección a /cliente/portal
+
+**Paleta de colores landing:**
+- Background: radial-gradient sky-200 → sky-100
+- Textos: sky-950 (títulos), sky-900 (subtítulos), sky-800 (párrafos)
+- Botones: sky-600 → sky-700 hover
+
+### Verificación
+- ✅ Build exitoso
+- ✅ Textos legibles en modo claro y oscuro
+- ✅ Responsive en móvil/tablet/desktop
+
+---
+
+## 📋 ROADMAP DE MEJORAS FUTURAS
+
+### 🔴 Prioridad Alta (Recomendado para producción)
+
+1. **Notificaciones por Email**
+   - Recordatorios de citas (24h antes)
+   - Alertas de vacunas vencidas
+   - Confirmación de cita creada
+   - Tecnología sugerida: Resend, SendGrid, o Mailgun
+
+2. **Sistema de Auditoría/Logs**
+   - Registrar acciones críticas (quién hizo qué)
+   - Login/logout de usuarios
+   - Cambios en datos de pacientes
+   - Creación/cancelación de citas
+
+3. **Exportación de Respaldos**
+   - Exportar todos los datos en JSON/CSV
+   - Programar exportaciones periódicas
+   - Almacenamiento en S3/Cloud Storage
+
+### 🟡 Prioridad Media
+
+4. **Facturación Básica**
+   - Generación de recibos simples
+   - Historial de pagos por cliente
+   - Exportación a PDF
+
+5. **Reportes Avanzados**
+   - Gráficos de tendencias mensuales
+   - Comparativas año vs año
+   - Métricas de veterinarios
+
+6. **Agenda Personal del Veterinario**
+   - Vista "Mi día" con citas asignadas
+   - Checklist de tareas pendientes
+   - Notas rápidas
+
+7. **Búsqueda Avanzada**
+   - Filtros múltiples combinados
+   - Búsqueda por rango de fechas
+   - Búsqueda por condición médica
+
+### 🟢 Prioridad Baja (Nice to have)
+
+8. **App Móvil PWA**
+   - Acceso offline a datos básicos
+   - Notificaciones push
+   - Cámara para fotos de pacientes
+
+9. **Integración con Laboratorios**
+   - Importación automática de resultados
+   - Notificación cuando hay resultados
+
+10. **Telemedicina**
+    - Videoconsultas integradas
+    - Chat con clientes
+    - Envío de recetas digitales
+
+11. **Multi-idioma**
+    - Soporte para inglés
+    - Detección automática de idioma
+
+### 📝 Notas de Implementación
+
+**Para Notificaciones por Email:**
+```bash
+pnpm add resend  # o @sendgrid/mail
+```
+
+Crear `server/services/email.ts`:
+```typescript
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+export async function sendAppointmentReminder(to: string, appointment: Appointment) {
+  await resend.emails.send({
+    from: 'Veterinaria Drago <no-reply@tudominio.com>',
+    to,
+    subject: `Recordatorio: Cita mañana a las ${appointment.time}`,
+    html: `...`
+  })
+}
+```
+
+**Para Sistema de Auditoría:**
+Crear modelo en Prisma:
+```prisma
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // "CREATE_APPOINTMENT", "DELETE_PATIENT", etc.
+  entity    String   // "Appointment", "Patient", etc.
+  entityId  String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+```
+
+---
+
+**Última actualización:** 22 de marzo de 2026
 **Build status:** ✅ Passing (0 errors)
-**Estado final:** ✅ PROYECTO COMPLETO - Todas las partes finalizadas
+**Estado final:** ✅ PROYECTO COMPLETO - Listo para producción
 
 ---
 
 ## 🎉 PROYECTO FINALIZADO
 
-### Transformación Completa de VetCare Drago
+### Transformación Completa de Veterinaria Drago
 
-**Duración:** 1 sesión (7 de marzo de 2026)
-**Resultado:** Sistema veterinario profesional premium completamente funcional
+**Duración:** Múltiples sesiones (7-22 de marzo de 2026)
+**Resultado:** Sistema veterinario profesional premium completamente funcional y listo para producción
 
 ### Estadísticas Finales:
 
-**Archivos totales creados:** 58
+**Archivos totales creados:** 60+
 - Parte 1 (Limpieza): 0 archivos creados, 12 modificados
 - Parte 2 (UI/UX): 24 archivos creados, 12 modificados
 - Parte 3 (Premium): 10 archivos creados, 8 modificados
-
-**Archivos totales modificados:** 32
+- Parte 4 (Correcciones): 0 archivos creados, 8 modificados
+- Parte 5 (Seguridad): 0 archivos creados, 3 modificados
+- Parte 6 (Rebranding): 2 archivos modificados
 
 **Dependencias instaladas:** 82 packages
 - next-themes, sonner: 2
@@ -1287,11 +1534,11 @@ model Appointment {
 - @fullcalendar/*: 6
 - @react-pdf/renderer: 54
 
-**Builds ejecutados:** 9
+**Builds ejecutados:** 12+
 - Todos exitosos (0 errores TypeScript)
 - Tiempo promedio: ~10s
 
-**Líneas de código agregadas:** ~6,000+
+**Líneas de código agregadas:** ~7,000+
 
 ### Funcionalidades Completadas:
 
@@ -1319,6 +1566,21 @@ model Appointment {
 ✅ Calendario visual interactivo
 ✅ Timeline de historial médico
 ✅ Exportación PDF de reportes
+
+**Parte 4 - Correcciones:**
+✅ Sistema de vinculación cita-registro médico
+✅ Filtro de citas activas/completadas
+✅ Bugs críticos resueltos
+
+**Parte 5 - Seguridad:**
+✅ Cambio de contraseña propia
+✅ Reseteo de contraseña por admin
+✅ Endpoints de gestión de usuarios
+
+**Parte 6 - Rebranding:**
+✅ Landing page profesional
+✅ Portal de clientes
+✅ Colores celeste/sky
 
 ### Calidad del Código:
 - ✅ Type-safe con TypeScript

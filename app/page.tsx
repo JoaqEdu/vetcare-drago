@@ -40,7 +40,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-sky-200">
+      <header className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-sky-200 dark:border-sky-800">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image
@@ -50,16 +50,16 @@ export default function LandingPage() {
               height={48}
               className="rounded-lg shadow-md"
             />
-            <span className="text-xl font-bold text-slate-800">Veterinaria Drago</span>
+            <span className="text-xl font-bold text-slate-800 dark:text-white">Veterinaria Drago</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#servicios" className="text-slate-700 hover:text-sky-600 font-medium transition-colors">
+            <a href="#servicios" className="text-slate-700 dark:text-slate-200 hover:text-sky-600 dark:hover:text-sky-400 font-medium transition-colors">
               Servicios
             </a>
-            <a href="#nosotros" className="text-slate-700 hover:text-sky-600 font-medium transition-colors">
+            <a href="#nosotros" className="text-slate-700 dark:text-slate-200 hover:text-sky-600 dark:hover:text-sky-400 font-medium transition-colors">
               Nosotros
             </a>
-            <a href="#contacto" className="text-slate-700 hover:text-sky-600 font-medium transition-colors">
+            <a href="#contacto" className="text-slate-700 dark:text-slate-200 hover:text-sky-600 dark:hover:text-sky-400 font-medium transition-colors">
               Contacto
             </a>
           </nav>
@@ -68,7 +68,7 @@ export default function LandingPage() {
               href="https://wa.me/51935841065"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 text-sm font-semibold text-slate-600"
+              className="hidden sm:flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
             >
               <Phone className="h-4 w-4" />
               935 841 065
@@ -85,13 +85,13 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6 z-10">
-              <h1 className="text-5xl md:text-7xl font-bold text-sky-950 leading-tight drop-shadow-sm">
+              <h1 className="text-5xl md:text-7xl font-bold text-sky-950 dark:text-white leading-tight drop-shadow-sm">
                 Te<br />cuido
               </h1>
-              <p className="text-xl text-sky-900 font-medium">
+              <p className="text-xl text-sky-900 dark:text-sky-100 font-medium">
                 Veterinario a domicilio y en consultorio
               </p>
-              <p className="text-lg text-sky-800">
+              <p className="text-lg text-sky-800 dark:text-sky-200">
                 Dedicados al cuidado de tu mascota
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
@@ -102,14 +102,14 @@ export default function LandingPage() {
                   </Button>
                 </a>
                 <a href="#servicios">
-                  <Button size="lg" variant="outline" className="border-sky-600 text-sky-900 hover:bg-sky-100 shadow-md">
+                  <Button size="lg" variant="outline" className="border-sky-600 dark:border-sky-400 text-sky-900 dark:text-sky-100 hover:bg-sky-100 dark:hover:bg-sky-900 shadow-md">
                     Ver servicios
                   </Button>
                 </a>
               </div>
             </div>
             <div className="relative flex justify-center">
-              <div className="w-64 h-64 md:w-80 md:h-80 rounded-full bg-white/80 shadow-2xl flex items-center justify-center p-4 border-4 border-sky-200">
+              <div className="w-64 h-64 md:w-80 md:h-80 rounded-full bg-white/80 dark:bg-slate-800/80 shadow-2xl flex items-center justify-center p-4 border-4 border-sky-200 dark:border-sky-700">
                 <Image
                   src="/logo-drago.jpg"
                   alt="Veterinaria Drago"
@@ -124,13 +124,13 @@ export default function LandingPage() {
       </section>
 
       {/* Services Section */}
-      <section id="servicios" className="py-20 bg-white/80 backdrop-blur-sm">
+      <section id="servicios" className="py-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 dark:text-white mb-4">
               Nuestros Servicios
             </h2>
-            <p className="text-slate-600 max-w-2xl mx-auto text-lg">
+            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto text-lg">
               Ofrecemos atencion veterinaria integral para el bienestar de tu mascota
             </p>
           </div>
@@ -138,15 +138,15 @@ export default function LandingPage() {
             {services.map((service) => (
               <div
                 key={service.title}
-                className="group p-6 rounded-2xl border-2 border-sky-100 bg-white shadow-md hover:shadow-xl hover:border-sky-300 transition-all duration-300"
+                className="group p-6 rounded-2xl border-2 border-sky-100 dark:border-sky-800 bg-white dark:bg-slate-800 shadow-md hover:shadow-xl hover:border-sky-300 dark:hover:border-sky-600 transition-all duration-300"
               >
-                <div className="w-14 h-14 rounded-xl bg-sky-100 flex items-center justify-center mb-4 group-hover:bg-sky-200 transition-colors">
-                  <service.icon className="h-7 w-7 text-sky-600" />
+                <div className="w-14 h-14 rounded-xl bg-sky-100 dark:bg-sky-900 flex items-center justify-center mb-4 group-hover:bg-sky-200 dark:group-hover:bg-sky-800 transition-colors">
+                  <service.icon className="h-7 w-7 text-sky-600 dark:text-sky-400" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
                   {service.title}
                 </h3>
-                <p className="text-slate-600">
+                <p className="text-slate-600 dark:text-slate-300">
                   {service.description}
                 </p>
               </div>
@@ -160,35 +160,35 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold text-sky-950">
+              <h2 className="text-3xl md:text-4xl font-bold text-sky-950 dark:text-white">
                 Dr. Carlos Liberato Tucto
               </h2>
-              <p className="text-xl text-sky-700 font-semibold">
+              <p className="text-xl text-sky-700 dark:text-sky-300 font-semibold">
                 Medico Veterinario - C.M.V.P. N° 6574
               </p>
-              <p className="text-sky-900 leading-relaxed text-lg">
+              <p className="text-sky-900 dark:text-sky-100 leading-relaxed text-lg">
                 Con anos de experiencia en medicina veterinaria, el Dr. Carlos Liberato
                 brinda atencion profesional y dedicada para el cuidado de tu mascota.
                 Especializado en medicina preventiva, cirugia y tratamientos integrales.
               </p>
               <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2 text-sky-900 font-medium">
-                  <div className="w-3 h-3 rounded-full bg-sky-600" />
+                <div className="flex items-center gap-2 text-sky-900 dark:text-sky-100 font-medium">
+                  <div className="w-3 h-3 rounded-full bg-sky-600 dark:bg-sky-400" />
                   Atencion personalizada
                 </div>
-                <div className="flex items-center gap-2 text-sky-900 font-medium">
-                  <div className="w-3 h-3 rounded-full bg-sky-600" />
+                <div className="flex items-center gap-2 text-sky-900 dark:text-sky-100 font-medium">
+                  <div className="w-3 h-3 rounded-full bg-sky-600 dark:bg-sky-400" />
                   Visitas a domicilio
                 </div>
-                <div className="flex items-center gap-2 text-sky-900 font-medium">
-                  <div className="w-3 h-3 rounded-full bg-sky-600" />
+                <div className="flex items-center gap-2 text-sky-900 dark:text-sky-100 font-medium">
+                  <div className="w-3 h-3 rounded-full bg-sky-600 dark:bg-sky-400" />
                   Equipos modernos
                 </div>
               </div>
             </div>
             <div className="flex justify-center">
-              <div className="w-64 h-64 md:w-80 md:h-80 rounded-2xl bg-white/80 shadow-xl flex items-center justify-center border-4 border-sky-200">
-                <Stethoscope className="h-24 w-24 md:h-32 md:w-32 text-sky-500" />
+              <div className="w-64 h-64 md:w-80 md:h-80 rounded-2xl bg-white/80 dark:bg-slate-800/80 shadow-xl flex items-center justify-center border-4 border-sky-200 dark:border-sky-700">
+                <Stethoscope className="h-24 w-24 md:h-32 md:w-32 text-sky-500 dark:text-sky-400" />
               </div>
             </div>
           </div>
@@ -196,40 +196,40 @@ export default function LandingPage() {
       </section>
 
       {/* Contact Section */}
-      <section id="contacto" className="py-20 bg-white/80 backdrop-blur-sm">
+      <section id="contacto" className="py-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-800 dark:text-white mb-4">
                 Contactanos
               </h2>
-              <p className="text-slate-600 text-lg">
+              <p className="text-slate-600 dark:text-slate-300 text-lg">
                 Estamos para ayudarte con el cuidado de tu mascota
               </p>
             </div>
             <div className="grid sm:grid-cols-3 gap-6 mb-12">
-              <div className="text-center p-6 rounded-2xl bg-sky-50 border-2 border-sky-200 shadow-md">
-                <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center mx-auto mb-4">
-                  <Phone className="h-7 w-7 text-sky-600" />
+              <div className="text-center p-6 rounded-2xl bg-sky-50 dark:bg-slate-800 border-2 border-sky-200 dark:border-sky-800 shadow-md">
+                <div className="w-14 h-14 rounded-full bg-sky-200 dark:bg-sky-900 flex items-center justify-center mx-auto mb-4">
+                  <Phone className="h-7 w-7 text-sky-600 dark:text-sky-400" />
                 </div>
-                <h3 className="font-bold text-slate-800 mb-1 text-lg">Telefono</h3>
-                <a href="tel:+51935841065" className="text-sky-600 hover:underline font-semibold text-lg">
+                <h3 className="font-bold text-slate-800 dark:text-white mb-1 text-lg">Telefono</h3>
+                <a href="tel:+51935841065" className="text-sky-600 dark:text-sky-400 hover:underline font-semibold text-lg">
                   935 841 065
                 </a>
               </div>
-              <div className="text-center p-6 rounded-2xl bg-sky-50 border-2 border-sky-200 shadow-md">
-                <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center mx-auto mb-4">
-                  <Clock className="h-7 w-7 text-sky-600" />
+              <div className="text-center p-6 rounded-2xl bg-sky-50 dark:bg-slate-800 border-2 border-sky-200 dark:border-sky-800 shadow-md">
+                <div className="w-14 h-14 rounded-full bg-sky-200 dark:bg-sky-900 flex items-center justify-center mx-auto mb-4">
+                  <Clock className="h-7 w-7 text-sky-600 dark:text-sky-400" />
                 </div>
-                <h3 className="font-bold text-slate-800 mb-1 text-lg">Horario</h3>
-                <p className="text-slate-600 font-medium">Lun - Sab: 9am - 7pm</p>
+                <h3 className="font-bold text-slate-800 dark:text-white mb-1 text-lg">Horario</h3>
+                <p className="text-slate-600 dark:text-slate-300 font-medium">Lun - Sab: 9am - 7pm</p>
               </div>
-              <div className="text-center p-6 rounded-2xl bg-sky-50 border-2 border-sky-200 shadow-md">
-                <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-7 w-7 text-sky-600" />
+              <div className="text-center p-6 rounded-2xl bg-sky-50 dark:bg-slate-800 border-2 border-sky-200 dark:border-sky-800 shadow-md">
+                <div className="w-14 h-14 rounded-full bg-sky-200 dark:bg-sky-900 flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="h-7 w-7 text-sky-600 dark:text-sky-400" />
                 </div>
-                <h3 className="font-bold text-slate-800 mb-1 text-lg">Ubicacion</h3>
-                <p className="text-slate-600 font-medium">Atencion a domicilio</p>
+                <h3 className="font-bold text-slate-800 dark:text-white mb-1 text-lg">Ubicacion</h3>
+                <p className="text-slate-600 dark:text-slate-300 font-medium">Atencion a domicilio</p>
               </div>
             </div>
             <div className="text-center">

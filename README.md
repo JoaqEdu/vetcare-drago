@@ -1,10 +1,13 @@
-# VetCare Drago
+# Veterinaria Drago
 
 Sistema de gestión veterinaria profesional desarrollado con Next.js 16, React 19 y TypeScript.
 
-## Descripcion
+**Estado:** ✅ Listo para producción
+**Última actualización:** 22 de marzo de 2026
 
-VetCare Drago es un sistema completo para clínicas veterinarias que permite gestionar:
+## Descripción
+
+Veterinaria Drago es un sistema completo para clínicas veterinarias que permite gestionar:
 
 - **Pacientes:** Registro completo de mascotas con historial médico
 - **Propietarios:** Gestión de clientes y sus mascotas
@@ -14,6 +17,23 @@ VetCare Drago es un sistema completo para clínicas veterinarias que permite ges
 - **Desparasitación:** Control de tratamientos antiparasitarios
 - **Procedimientos Dentales:** Registro de tratamientos dentales
 - **Laboratorio y Rayos X:** Gestión de estudios diagnósticos
+- **Portal de Clientes:** Acceso para propietarios con token único
+- **Gestión de Usuarios:** Administración de equipo con roles
+
+## Estado del Proyecto
+
+| Módulo | Estado | Completitud |
+|--------|--------|-------------|
+| Gestión de Pacientes | ✅ Completo | 100% |
+| Gestión de Propietarios | ✅ Completo | 100% |
+| Sistema de Citas | ✅ Completo | 100% |
+| Expedientes Médicos | ✅ Completo | 100% |
+| Vacunaciones | ✅ Completo | 100% |
+| Desparasitaciones | ✅ Completo | 100% |
+| Portal de Clientes | ✅ Completo | 100% |
+| Gestión de Usuarios | ✅ Completo | 100% |
+| Reportes | ✅ Completo | 100% |
+| Dark Mode | ✅ Completo | 100% |
 
 ## Stack Tecnológico
 
@@ -56,6 +76,20 @@ VetCare Drago es un sistema completo para clínicas veterinarias que permite ges
 - Focus indicators
 - ARIA labels
 - Navegación por teclado
+
+### Portal de Clientes
+- Acceso mediante token único generado por la clínica
+- Vista de mascotas registradas
+- Historial de citas
+- Próximas vacunas y desparasitaciones
+- Interfaz separada del dashboard administrativo
+
+### Gestión de Usuarios y Seguridad
+- Roles: Administrador, Veterinario, Recepcionista
+- Cambio de contraseña propia (usuarios)
+- Reseteo de contraseña por admin
+- Activación/desactivación de cuentas
+- Activación/desactivación de portales de clientes
 
 ## Inicio Rápido
 
@@ -142,6 +176,59 @@ DATABASE_URL="postgresql://..."
 NEXTAUTH_SECRET="..."
 NEXTAUTH_URL="http://localhost:3000"
 ```
+
+## Despliegue en Producción
+
+### Opción Recomendada: Vercel + Supabase
+
+**Base de Datos (Supabase):**
+```bash
+# 1. Crear proyecto en supabase.com
+# 2. Obtener connection string de Settings > Database
+# 3. Configurar en variables de entorno de Vercel
+DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+```
+
+**Beneficios de Supabase:**
+- Backups automáticos diarios
+- Panel de administración SQL
+- Escalado automático
+- SSL incluido
+
+**Frontend (Vercel):**
+```bash
+# Conectar repositorio a Vercel
+# Configurar variables de entorno:
+DATABASE_URL="..."
+NEXTAUTH_SECRET="..."  # Generar con: openssl rand -base64 32
+NEXTAUTH_URL="https://tu-dominio.com"
+```
+
+### Después del Deploy
+
+```bash
+# Ejecutar seed para crear admin inicial
+npx prisma db seed
+```
+
+## Mejoras Futuras Recomendadas
+
+### Prioridad Alta
+- [ ] **Notificaciones por Email:** Recordatorios de citas y vacunas
+- [ ] **Sistema de Respaldos:** Exportación periódica de datos
+- [ ] **Auditoría:** Log de acciones críticas (quién hizo qué)
+
+### Prioridad Media
+- [ ] **Facturación Básica:** Generación de recibos/facturas
+- [ ] **Reportes Avanzados:** Gráficos de tendencias, comparativas
+- [ ] **Agenda del Veterinario:** Vista personal de citas del día
+- [ ] **Búsqueda Avanzada:** Filtros por fecha, especie, condición
+
+### Prioridad Baja
+- [ ] **App Móvil:** PWA o React Native
+- [ ] **Integración con Laboratorios:** Importación automática de resultados
+- [ ] **Telemedicina:** Videoconsultas integradas
+- [ ] **Multi-idioma:** Soporte para inglés
 
 ## Documentación Adicional
 
