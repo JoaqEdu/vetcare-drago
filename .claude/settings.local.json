@@ -24,7 +24,9 @@
       "Bash(pnpm dev)",
       "Bash(ping:*)",
       "Bash(npx next dev --help:*)",
-      "Bash(npx next dev:*)"
+      "Bash(npx next dev:*)",
+      "Bash(openssl rand:*)",
+      "Bash(npx prisma db seed:*)"
     ]
   }
 }
