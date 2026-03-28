@@ -25,7 +25,7 @@ const services = [
   },
   {
     icon: Bath,
-    title: "Banos Medicados",
+    title: "Baños Medicados",
     description: "Tratamientos dermatologicos especializados",
   },
 ]
@@ -156,7 +156,7 @@ export default function ClienteLandingPage() {
                 Medico Veterinario - C.M.V.P. N 6574
               </p>
               <p className="text-sky-900 leading-relaxed max-w-2xl mx-auto text-lg">
-                Con anos de experiencia en medicina veterinaria, el Dr. Carlos Liberato
+                Con años de experiencia en medicina veterinaria, el Dr. Carlos Liberato
                 brinda atencion profesional y dedicada para el cuidado de tu mascota.
                 Especializado en medicina preventiva, cirugia y tratamientos integrales.
               </p>

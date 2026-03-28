@@ -172,7 +172,7 @@ export default async function PatientDetailPage({
                   {patient.birthDate
                     ? format(new Date(patient.birthDate), "PPP", { locale: es })
                     : "No especificada"}
-                  {age !== null && ` (${age} ${age === 1 ? "ano" : "anos"})`}
+                  {age !== null && ` (${age} ${age === 1 ? "año" : "años"})`}
                 </p>
               </div>
               <div>
